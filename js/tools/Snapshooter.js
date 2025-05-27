@@ -6,10 +6,12 @@
  */
 function Snapshooter(root) {
 	"use strict";
-
+	
+	console.log({xdata: globalThis.xdata});
+	
 	// list of shorthand properties based on CSSShorthands.in from the Chromium code (https://code.google.com/p/chromium/codesearch)
 	// TODO this list should not be hardcoded here
-	var shorthandProperties = {
+	var shorthandsToCamelCase = {
 			'animation': 'animation',
 			'background': 'background',
 			'border': 'border',
@@ -53,6 +55,16 @@ function Snapshooter(root) {
 		},
 		idCounter = 1;
 
+
+	const cssPropToCamelCase = (cssProperty) =>
+		cssProperty.replace(/^-./, (match) => match.slice(1)) // Remove leading hyphen if present (e.g., '-webkit-')
+							.replace(/-([a-z])/g, (_, char) => char.toUpperCase());
+
+		// TODO: delete the above thing
+		shorthandsToCamelCase = Object.fromEntries(xdata.cssShorthands.map(([key, _]) => [key, cssPropToCamelCase(key)]));
+
+
+	console.log({shorthandsToCamelCase});
 	/**
 	 * Changes CSSStyleDeclaration to simple Object removing unwanted properties ('1','2','parentRule','cssText' etc.) in the process.
 	 *
@@ -71,9 +83,9 @@ function Snapshooter(root) {
 		output.content = fixContentProperty(style.content);
 
 		// Since shorthand properties are not available in the indexed array, copy them from named properties
-		for (cssName in shorthandProperties) {
-			if (shorthandProperties.hasOwnProperty(cssName)) {
-				camelCaseName = shorthandProperties[cssName];
+		for (cssName in shorthandsToCamelCase) {
+			if (shorthandsToCamelCase.hasOwnProperty(cssName)) {
+				camelCaseName = shorthandsToCamelCase[cssName];
 				output[cssName] = style[camelCaseName];
 			}
 		}

@@ -1,6 +1,56 @@
 (function () {
 	"use strict";
 
+	// https://source.chromium.org/chromium/chromium/src/+/main:third_party/blink/web_tests/external/wpt/css/cssom/cssom-getPropertyValue-common-checks.html;drc=49996c02d4a54ec79343ddbcbfd563306c34483c
+	const element = document.createElement('div');
+	const { style } = element;
+	const computedStyle = getComputedStyle(element);
+	const cssProperties = new Set();
+	const cssShorthands = new Map();
+	const cssShorthandsForLonghand = new Map();
+	const cssLonghands = new Set();
+	const cssAliases = new Map();
+	const initialValues = new Map();
+	for (let obj = style; obj; obj = Reflect.getPrototypeOf(obj)) {
+    for (let name of Object.getOwnPropertyNames(obj)) {
+      const property = name.replace(/[A-Z]/g, c => "-" + c.toLowerCase());
+      if (CSS.supports(property, "initial")) {
+        cssProperties.add(property);
+      }
+    }
+  }
+  for (let property of cssProperties) {
+    style.cssText = "";
+    style.setProperty(property, "initial");
+    if (style.length > 1) {
+      cssShorthands.set(property, [...style]);
+      for (let longhand of style) {
+        if (cssShorthandsForLonghand.has(longhand)) {
+          cssShorthandsForLonghand.get(longhand).add(property);
+        } else {
+          cssShorthandsForLonghand.set(longhand, new Set([property]));
+        }
+      }
+    } else if (style.length === 1) {
+      if (property === style[0]) {
+        cssLonghands.add(property);
+      } else {
+        cssAliases.set(property, style[0]);
+      }
+    }
+  }
+	const data = {
+		computedStyle,
+		cssProperties,
+		cssShorthands,
+		cssShorthandsForLonghand,
+		cssLonghands,
+		cssAliases,
+		initialValues
+	};
+	globalThis.xdata = data;
+	console.log('initial', xdata);
+
 	var lastSnapshot,
 
 		cssStringifier = new CSSStringifier(),
@@ -157,7 +207,13 @@
 		loader.addClass('creating');
 		errorBox.removeClass('active');
 
-		inspectedContext.eval("(" + Snapshooter.toString() + ")($0)", function (result) {
+		// sets to arrays.
+		const xdataString = JSON.stringify(xdata,(_key, value) => ((value instanceof Set || value instanceof Map) ? Array.from(value) : value));
+
+		inspectedContext.eval(`
+			globalThis.xdata = ${xdataString};
+			(${Snapshooter.toString()})($0)
+		`, function (result) {
 			try {
 				lastSnapshot = JSON.parse(result);
 			} catch (e) {

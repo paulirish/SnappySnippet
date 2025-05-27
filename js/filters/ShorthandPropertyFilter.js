@@ -15,7 +15,24 @@ function ShorthandPropertyFilter() {
 		"background": ["background-image", "bakcground-position", "background-position-x", "background-position-y", "background-size", "background-repeat", "background-repeat-x", "background-repeat-y", "background-attachment", "background-origin", "background-clip", "background-color"],
 //		"background-position": ["background-position-x", "background-position-y"],
 //		"background-repeat": ["background-repeat-x", "background-repeat-y"],
-		"border": ["border-left", "border-right", "border-bottom", "border-top", "border-color", "border-style", "border-width", "border-top-color", "border-top-style", "border-top-width", "border-right-color", "border-right-style", "border-right-width", "border-bottom-color", "border-bottom-style", "border-bottom-width", "border-left-color", "border-left-style", "border-left-width"],
+		 "border": [
+        "border-left", "border-right", "border-bottom", "border-top",
+        "border-color", "border-style", "border-width",
+        "border-top-color", "border-top-style", "border-top-width",
+        "border-right-color", "border-right-style", "border-right-width",
+        "border-bottom-color", "border-bottom-style", "border-bottom-width",
+        "border-left-color", "border-left-style", "border-left-width",
+        // Logical properties
+        "border-block", "border-inline",
+        "border-block-start", "border-block-end",
+        "border-inline-start", "border-inline-end",
+        "border-block-color", "border-block-style", "border-block-width",
+        "border-inline-color", "border-inline-style", "border-inline-width",
+        "border-block-start-color", "border-block-start-style", "border-block-start-width",
+        "border-block-end-color", "border-block-end-style", "border-block-end-width",
+        "border-inline-start-color", "border-inline-start-style", "border-inline-start-width",
+        "border-inline-end-color", "border-inline-end-style", "border-inline-end-width"
+    ],
 		"border-bottom": ["border-color", "border-style", "border-width", "border-bottom-width", "border-bottom-style", "border-bottom-color"],
 //		"border-color": ["border-top-color", "border-right-color", "border-bottom-color", "border-left-color"],
 //		"border-image": ["border-image-source", "border-image-slice", "border-image-width", "border-image-outset", "border-image-repeat"],
@@ -58,6 +75,9 @@ function ShorthandPropertyFilter() {
 		"-webkit-transition": ["-webkit-transition-property", "-webkit-transition-duration", "-webkit-transition-timing-function", "-webkit-transition-delay"],
 		"-webkit-transform-origin": ["-webkit-transform-origin-x", "-webkit-transform-origin-y", "-webkit-transform-origin-z"],
 	};
+	// todo: delete above thing
+	shorthands = Object.fromEntries(xdata.cssShorthands.entries().toArray());
+	
 
 	function keepOnlyShorthandProperties(style) {
 		var property,
