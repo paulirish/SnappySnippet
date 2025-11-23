@@ -4,30 +4,29 @@ function generateCSSPropertiesData() {
   "use strict";
 
   const element = document.createElement('div');
-  const { style } = element;
-  const computedStyle = getComputedStyle(element);
-  const cssProperties = new Set();
-  const cssShorthands = new Map();
-  const cssShorthandsForLonghand = new Map();
-  const cssLonghands = new Set();
-  const cssAliases = new Map();
-  const initialValues = new Map();
-  for (let obj = style; obj; obj = Reflect.getPrototypeOf(obj)) {
-    for (let name of Object.getOwnPropertyNames(obj)) {
+      const { style } = element;
+      const computedStyle = getComputedStyle(element);
+      const cssProperties = new Set<string>();
+      const cssShorthands = new Map<string, string[]>();
+      const cssShorthandsForLonghand = new Map<string, Set<string>>();
+      const cssLonghands = new Set<string>();
+      const cssAliases = new Map<string, string>();
+      const initialValues = new Map<string, string>();
+      for (let obj: CSSStyleDeclaration | null = style; obj; obj = Reflect.getPrototypeOf(obj) as any) {    for (let name of Object.getOwnPropertyNames(obj)) {
       const property = name.replace(/[A-Z]/g, c => "-" + c.toLowerCase());
       if (CSS.supports(property, "initial")) {
         cssProperties.add(property);
       }
     }
   }
-  for (let property of cssProperties) {
+  for (const property of Array.from(cssProperties)) {
     style.cssText = "";
     style.setProperty(property, "initial");
     if (style.length > 1) {
       cssShorthands.set(property, [...style]);
       for (let longhand of style) {
         if (cssShorthandsForLonghand.has(longhand)) {
-          cssShorthandsForLonghand.get(longhand).add(property);
+          cssShorthandsForLonghand.get(longhand)!.add(property);
         } else {
           cssShorthandsForLonghand.set(longhand, new Set([property]));
         }
@@ -73,9 +72,9 @@ class DefaultValueFilter {
     document.body.appendChild(this.iframe);
   }
 
-  removeDefaultValues(style: CSSStyleDeclaration, tagName: string, pseudoElement: string | null) {
+  removeDefaultValues(style: CSSStyleDeclaration, tagName: string, pseudoElement: string | null): Record<string, string> {
     let property, avalue, bvalue, cloneStyle;
-    const output = {};
+    const output: Record<string, string> = {};
     const clone = this.element.ownerDocument.createElement(tagName);
 
     if (tagName === 'A') {
@@ -83,11 +82,20 @@ class DefaultValueFilter {
       clone.setAttribute('href', '#');
     }
 
+    if (!this.iframe.contentWindow) {
+      return output;
+    }
     this.iframe.contentWindow.document.body.appendChild(clone);
 
     if (pseudoElement) {
+      if (!clone.ownerDocument.defaultView) {
+        return output;
+      }
       cloneStyle = clone.ownerDocument.defaultView.getComputedStyle(clone, pseudoElement);
     } else {
+      if (!clone.ownerDocument.defaultView) {
+        return output;
+      }
       cloneStyle = clone.ownerDocument.defaultView.getComputedStyle(clone);
     }
 
@@ -109,30 +117,32 @@ class DefaultValueFilter {
 }
 
 class Snapshooter {
-  constructor(cssData) {
+  cssData: any;
+  shorthandsToCamelCase: Record<string, string>;
+  constructor(cssData: any) {
     this.cssData = cssData;
-    this.shorthandsToCamelCase = Array.from(this.cssData.cssShorthands).reduce((acc, [shorthand, _]) => {
-      acc[shorthand] = shorthand.replace(/-([a-z])/g, (_, char) => char.toUpperCase());
-      return acc;
-    }, {});
+    this.shorthandsToCamelCase = {} as Record<string, string>;
+    for (const [shorthand, _] of this.cssData.cssShorthands) {
+      this.shorthandsToCamelCase[shorthand] = shorthand.replace(/-([a-z])/g, (_: string, char: string) => char.toUpperCase());
+    }
   }
 
-  styleDeclarationToSimpleObject(style) {
+  styleDeclarationToSimpleObject(style: CSSStyleDeclaration) {
     let i, l, cssName, camelCaseName;
-    const output = {};
+    const output: Record<string, string> = {};
 
     for (i = 0, l = style.length; i < l; i++) {
-      output[style[i]] = style[style[i]];
+      output[style[i]] = style.getPropertyValue(style[i]);
     }
 
     // Work around http://crbug.com/313670 (the "content" property is not present as a computed style indexed property value).
-    output.content = this.fixContentProperty(style.content);
+    output['content'] = this.fixContentProperty(style.content);
 
     // Since shorthand properties are not available in the indexed array, copy them from named properties
     for (cssName in this.shorthandsToCamelCase) {
       if (this.shorthandsToCamelCase.hasOwnProperty(cssName)) {
         camelCaseName = this.shorthandsToCamelCase[cssName];
-        output[cssName] = style[camelCaseName];
+        output[cssName] = style.getPropertyValue(cssName);
       }
     }
 
@@ -140,7 +150,7 @@ class Snapshooter {
   }
 
   // Partial workaround for http://crbug.com/315028 (single words in the "content" property are not wrapped with quotes)
-  fixContentProperty(content) {
+  fixContentProperty(content: string) {
     let values, output, value, i, l;
 
     output = [];
@@ -166,7 +176,10 @@ class Snapshooter {
     return output.join(' ');
   }
 
-  dumpCSS(node, pseudoElement) {
+  dumpCSS(node: Element, pseudoElement: string | null) {
+    if (!node.ownerDocument.defaultView) {
+      return {};
+    }
     const styles = node.ownerDocument.defaultView.getComputedStyle(node, pseudoElement);
 
     if (pseudoElement) {
@@ -182,44 +195,46 @@ class Snapshooter {
 }
 
 // Main library file
-export function getNonDefaultComputedStyles(element) {
+export function getNonDefaultComputedStyles(element: Element) {
   const cssData = generateCSSPropertiesData();
   const filter = new DefaultValueFilter(element);
   const snapshooter = new Snapshooter(cssData);
 
-  function processNode(node) {
+  function processNode(node: Node) {
     if (node.nodeType !== Node.ELEMENT_NODE) {
       return null;
     }
 
+    const element = node as Element;
+
     const result = {
-      tagName: node.tagName,
-      attributes: {},
-      styles: {},
-      pseudo: {},
-      children: []
+      tagName: element.tagName,
+      attributes: {} as Record<string, string>,
+      styles: {} as Record<string, string>,
+      pseudo: {} as Record<string, Record<string, string>>,
+      children: [] as any[]
     };
 
-    for (let i = 0; i < node.attributes.length; i++) {
-      const attr = node.attributes[i];
+    for (let i = 0; i < element.attributes.length; i++) {
+      const attr = element.attributes[i];
       result.attributes[attr.name] = attr.value;
     }
 
-    const styles = snapshooter.dumpCSS(node, null);
-    result.styles = filter.removeDefaultValues(styles, node.tagName);
+    const styles = snapshooter.dumpCSS(element, null);
+    result.styles = filter.removeDefaultValues(styles as unknown as CSSStyleDeclaration, element.tagName, null);
 
-    const beforeStyles = snapshooter.dumpCSS(node, ':before');
+    const beforeStyles = snapshooter.dumpCSS(element, ':before');
     if (beforeStyles) {
-      result.pseudo[':before'] = filter.removeDefaultValues(beforeStyles, node.tagName, ':before');
+      result.pseudo[':before'] = filter.removeDefaultValues(beforeStyles as unknown as CSSStyleDeclaration, element.tagName, ':before');
     }
 
-    const afterStyles = snapshooter.dumpCSS(node, ':after');
+    const afterStyles = snapshooter.dumpCSS(element, ':after');
     if (afterStyles) {
-      result.pseudo[':after'] = filter.removeDefaultValues(afterStyles, node.tagName, ':after');
+      result.pseudo[':after'] = filter.removeDefaultValues(afterStyles as unknown as CSSStyleDeclaration, element.tagName, ':after');
     }
 
-    for (let i = 0; i < node.childNodes.length; i++) {
-      const childResult = processNode(node.childNodes[i]);
+    for (let i = 0; i < element.childNodes.length; i++) {
+      const childResult = processNode(element.childNodes[i]);
       if (childResult) {
         result.children.push(childResult);
       }

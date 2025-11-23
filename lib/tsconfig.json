@@ -4,8 +4,8 @@
     "module": "nodenext",
     "esModuleInterop": true,
     "verbatimModuleSyntax": true,
-    "allowImportingTsExtensions": true,
-    "noEmit": true,
+
+    "noEmit": false,
     "strict": true
   }
 }
