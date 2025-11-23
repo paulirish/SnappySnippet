@@ -3,75 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultra-Premium CSS Cards</title>
+    <title>Static 3D CSS Cards</title>
     <style>
-        /* --- RESET & ENV --- */
         :root {
             --bg: #0f0f11;
             --card-ratio: 1 / 1.5;
-            --card-width: clamp(240px, 20vw, 320px);
+            --card-width: 260px;
             --glitter: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.15'/%3E%3C/svg%3E");
         }
 
         body {
             margin: 0;
             min-height: 100vh;
-            display: grid;
-            place-items: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             background-color: var(--bg);
             background-image: 
                 radial-gradient(circle at 50% 0%, #2a2a35, transparent 70%),
                 radial-gradient(circle at 80% 90%, #1a1a20, transparent 50%);
-            font-family: 'Inter', 'Segoe UI', sans-serif;
-            overflow-x: hidden;
-            perspective: 1000px; /* Essential for 3D */
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            perspective: 1200px; /* Deep perspective for the fan effect */
         }
 
         .hand {
             display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
+            align-items: center;
             justify-content: center;
-            padding: 40px;
+            padding: 0 40px;
         }
 
-        /* --- THE CARD CHASSIS --- */
         .card {
             width: var(--card-width);
             aspect-ratio: var(--card-ratio);
             position: relative;
             border-radius: 24px;
             transform-style: preserve-3d;
-            cursor: pointer;
+            flex-shrink: 0;
             
-            /* Physics Variables (Set by JS) */
+            /* Fan Layout: Overlap cards */
+            margin-left: -40px; 
+            
+            /* Default Physics (Overridden by inline styles) */
             --rx: 0deg;
             --ry: 0deg;
             --tx: 0px;
             --ty: 0px;
-            --opacity: 0; /* For the glare */
+            --mx: 50%; /* Light position X */
+            --my: 50%; /* Light position Y */
+            --op: 1;   /* Opacity of effects */
             
+            /* The Static Pose */
             transform: 
                 rotateX(var(--rx)) 
                 rotateY(var(--ry)) 
                 translate3d(var(--tx), var(--ty), 0);
-            transition: transform 0.1s ease-out, box-shadow 0.2s ease;
+                
             box-shadow: 
-                0 20px 40px -10px rgba(0,0,0,0.7),
-                0 0 0 1px rgba(255,255,255,0.1) inset; /* Inner bevel */
+                20px 30px 50px -10px rgba(0,0,0,0.6),
+                0 0 0 1px rgba(255,255,255,0.1) inset;
         }
 
-        /* Hover Lift */
-        .card:hover {
-            z-index: 10;
-            box-shadow: 
-                0 40px 60px -20px rgba(0,0,0,0.8),
-                0 0 0 1px rgba(255,255,255,0.2) inset;
-        }
+        /* First card shouldn't pull left */
+        .card:first-child { margin-left: 0; }
 
         /* --- LAYERS --- */
         
-        /* 1. Glass Base */
         .card__bg {
             position: absolute;
             inset: 0;
@@ -83,7 +81,6 @@
             overflow: hidden;
         }
 
-        /* 2. Noise Texture (Grain) */
         .card__bg::after {
             content: "";
             position: absolute;
@@ -91,10 +88,9 @@
             background-image: var(--glitter);
             mix-blend-mode: overlay;
             opacity: 0.5;
-            pointer-events: none;
         }
 
-        /* 3. Holographic Foil Gradient */
+        /* Holographic Foil */
         .card__foil {
             position: absolute;
             inset: 0;
@@ -104,41 +100,33 @@
                     115deg, 
                     transparent 0%, 
                     rgba(255,255,255,0.3) 30%, 
-                    rgba(255,0,150,0.5) 45%, 
-                    rgba(0,200,255,0.5) 55%, 
+                    rgba(255,0,150,0.4) 45%, 
+                    rgba(0,200,255,0.4) 55%, 
                     transparent 70%
                 );
             mix-blend-mode: color-dodge;
-            opacity: var(--opacity);
+            opacity: var(--op);
             background-size: 200% 200%;
-            background-position: var(--mx, 50%) var(--my, 50%); /* Follows mouse */
+            background-position: var(--mx) var(--my);
             z-index: 2;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
         }
 
-        /* 4. Border Glow */
-        .card::before {
-            content: "";
+        /* Specular Glare */
+        .card__glare {
             position: absolute;
-            inset: -2px;
-            border-radius: 26px;
-            background: conic-gradient(
-                from 0deg, 
-                transparent, 
-                var(--accent), 
-                transparent, 
-                var(--accent), 
-                transparent
+            inset: 0;
+            border-radius: inherit;
+            z-index: 4;
+            background: radial-gradient(
+                farthest-corner at var(--mx) var(--my), 
+                rgba(255,255,255,0.7) 0%, 
+                rgba(255,255,255,0) 40%
             );
-            z-index: -1;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            filter: blur(8px);
+            opacity: var(--op);
+            mix-blend-mode: overlay;
         }
-        .card:hover::before { opacity: 0.6; }
 
-        /* --- CONTENT & TYPOGRAPHY --- */
+        /* --- CONTENT --- */
         .card__content {
             position: relative;
             z-index: 3;
@@ -148,93 +136,59 @@
             justify-content: space-between;
             padding: 24px;
             color: #fff;
-            /* 3D Depth for text */
-            transform: translateZ(30px); 
+            transform: translateZ(20px); /* Text floats off surface */
+            box-sizing: border-box;
         }
 
         .card__val {
-            font-size: 2.5rem;
+            font-size: 2rem;
             font-weight: 800;
             line-height: 1;
             text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
 
-        .card__suit {
-            display: block;
-            font-size: 0.8em;
-        }
+        .card__suit { font-size: 0.8em; }
 
         .card__center {
-            font-size: 5rem;
+            font-size: 4.5rem;
             align-self: center;
             filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
             background: linear-gradient(to bottom right, #fff, var(--accent));
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
-            animation: float 6s ease-in-out infinite;
         }
 
         .card__name {
             text-align: center;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             letter-spacing: 0.2em;
             text-transform: uppercase;
             opacity: 0.8;
             font-weight: 600;
-            margin-top: -20px; /* Pull up slightly */
+            margin-top: -10px;
         }
 
-        /* --- VARIATIONS --- */
-        
-        /* Card 1: The Ace (Void/Cyber) */
-        .card[data-suit="spades"] { --accent: #bd00ff; }
-        .card[data-suit="spades"] .card__bg { background: radial-gradient(circle at 50% 50%, #240036, #000); }
-        
-        /* Card 2: The Heart (Neon/Hot) */
-        .card[data-suit="hearts"] { --accent: #ff0055; }
-        .card[data-suit="hearts"] .card__bg { background: radial-gradient(circle at 50% 50%, #4a0018, #1a0005); }
-
-        /* Card 3: The Club (Toxic/Bio) */
-        .card[data-suit="clubs"] { --accent: #00ff9d; }
-        .card[data-suit="clubs"] .card__bg { background: radial-gradient(circle at 50% 50%, #003822, #000f08); }
-
-        /* Card 4: The Diamond (Gold/Lux) */
-        .card[data-suit="diamonds"] { --accent: #ffd700; }
-        .card[data-suit="diamonds"] .card__bg { background: radial-gradient(circle at 50% 50%, #423800, #141100); }
-        
-        /* Card 5: The Joker (Chaos) */
-        .card[data-suit="joker"] { --accent: #fff; }
-        .card[data-suit="joker"] .card__bg { 
-            background: conic-gradient(from 0deg, #111, #222, #111); 
+        /* --- SUIT COLORS & VARIATIONS --- */
+        .card[data-suit="spades"] { 
+            --accent: #bd00ff; 
+            background: linear-gradient(to bottom, #1a1a1a, #000); 
         }
-        .card[data-suit="joker"] .card__center {
-            background: linear-gradient(45deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);
-            -webkit-background-clip: text;
-            filter: blur(0.5px);
+        .card[data-suit="hearts"] { 
+            --accent: #ff0055; 
+            background: linear-gradient(to bottom, #29000f, #000);
         }
-
-        /* --- ANIMATIONS --- */
-        @keyframes float {
-            0%, 100% { transform: translateY(0) scale(1); }
-            50% { transform: translateY(-10px) scale(1.05); }
+        .card[data-suit="diamonds"] { 
+            --accent: #ffd700; 
+            background: linear-gradient(to bottom, #1f1a00, #000);
         }
-
-        /* --- REFLECTIONS (The "Sheen") --- */
-        .card__glare {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            border-radius: inherit;
-            z-index: 4;
-            background: radial-gradient(
-                farthest-corner at var(--mx, 50%) var(--my, 50%), 
-                rgba(255,255,255,0.8) 0%, 
-                rgba(255,255,255,0) 20%
-            );
-            opacity: var(--opacity);
-            mix-blend-mode: overlay;
-            pointer-events: none;
-            transition: opacity 0.3s;
+        .card[data-suit="clubs"] { 
+            --accent: #00ff9d; 
+            background: linear-gradient(to bottom, #001f13, #000);
+        }
+        .card[data-suit="joker"] { 
+            --accent: #fff; 
+            background: conic-gradient(from 0deg, #222, #111, #222); 
         }
     </style>
 </head>
@@ -242,7 +196,8 @@
 
 <div class="hand">
 
-    <div class="card" data-suit="spades">
+    <div class="card" data-suit="spades" 
+         style="--rx: 5deg; --ry: -25deg; --tx: 0px; --ty: 40px; --mx: 90%; --my: 10%; --op: 0.6;">
         <div class="card__bg"></div>
         <div class="card__foil"></div>
         <div class="card__glare"></div>
@@ -250,11 +205,12 @@
             <div class="card__val">A<span class="card__suit">♠</span></div>
             <div class="card__center">♠</div>
             <div class="card__val" style="transform: rotate(180deg); align-self: flex-end;">A<span class="card__suit">♠</span></div>
-            <div class="card__name">The Architect</div>
+            <div class="card__name">Architect</div>
         </div>
     </div>
 
-    <div class="card" data-suit="hearts">
+    <div class="card" data-suit="hearts" 
+         style="--rx: 0deg; --ry: -15deg; --tx: 0px; --ty: 10px; --mx: 70%; --my: 30%; --op: 0.8;">
         <div class="card__bg"></div>
         <div class="card__foil"></div>
         <div class="card__glare"></div>
@@ -262,11 +218,12 @@
             <div class="card__val">K<span class="card__suit">♥</span></div>
             <div class="card__center">♥</div>
             <div class="card__val" style="transform: rotate(180deg); align-self: flex-end;">K<span class="card__suit">♥</span></div>
-            <div class="card__name">The Sovereign</div>
+            <div class="card__name">Sovereign</div>
         </div>
     </div>
 
-    <div class="card" data-suit="diamonds">
+    <div class="card" data-suit="diamonds" 
+         style="--rx: 10deg; --ry: 0deg; --tx: 0px; --ty: -10px; --mx: 50%; --my: 50%; --op: 1;">
         <div class="card__bg"></div>
         <div class="card__foil"></div>
         <div class="card__glare"></div>
@@ -274,11 +231,12 @@
             <div class="card__val">Q<span class="card__suit">♦</span></div>
             <div class="card__center">♦</div>
             <div class="card__val" style="transform: rotate(180deg); align-self: flex-end;">Q<span class="card__suit">♦</span></div>
-            <div class="card__name">The Oracle</div>
+            <div class="card__name">Oracle</div>
         </div>
     </div>
 
-    <div class="card" data-suit="clubs">
+    <div class="card" data-suit="clubs" 
+         style="--rx: 0deg; --ry: 15deg; --tx: 0px; --ty: 10px; --mx: 30%; --my: 30%; --op: 0.8;">
         <div class="card__bg"></div>
         <div class="card__foil"></div>
         <div class="card__glare"></div>
@@ -286,11 +244,12 @@
             <div class="card__val">J<span class="card__suit">♣</span></div>
             <div class="card__center">♣</div>
             <div class="card__val" style="transform: rotate(180deg); align-self: flex-end;">J<span class="card__suit">♣</span></div>
-            <div class="card__name">The Scout</div>
+            <div class="card__name">Scout</div>
         </div>
     </div>
 
-    <div class="card" data-suit="joker">
+    <div class="card" data-suit="joker" 
+         style="--rx: 20deg; --ry: 30deg; --tx: -10px; --ty: 50px; --mx: 10%; --my: 80%; --op: 0.7;">
         <div class="card__bg"></div>
         <div class="card__foil"></div>
         <div class="card__glare"></div>
@@ -303,42 +262,6 @@
     </div>
 
 </div>
-
-<script>
-    // Modern Vanilla JS for 3D Physics
-    const cards = document.querySelectorAll('.card');
-
-    cards.forEach(card => {
-        card.addEventListener('mousemove', (e) => {
-            const rect = card.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            
-            // Calculate percentage (0 to 1)
-            const xPct = x / rect.width;
-            const yPct = y / rect.height;
-
-            // Calculate rotation (max +/- 15deg)
-            // If mouse is on left (xPct 0), rotate Y negative. 
-            const rY = (xPct - 0.5) * 30; 
-            const rX = (0.5 - yPct) * 30; 
-
-            // Set properties
-            card.style.setProperty('--rx', `${rX}deg`);
-            card.style.setProperty('--ry', `${rY}deg`);
-            card.style.setProperty('--mx', `${xPct * 100}%`);
-            card.style.setProperty('--my', `${yPct * 100}%`);
-            card.style.setProperty('--opacity', '1');
-        });
-
-        card.addEventListener('mouseleave', () => {
-            // Reset transition
-            card.style.setProperty('--rx', '0deg');
-            card.style.setProperty('--ry', '0deg');
-            card.style.setProperty('--opacity', '0');
-        });
-    });
-</script>
 
 </body>
 </html>

@@ -33,96 +33,6 @@
       perspective: 1000px;
     }
 
-    .card {
-      width: var(--card-width);
-      height: var(--card-height);
-      margin: 10px;
-      padding: 10px;
-      cursor: pointer;
-      position: relative;
-      border-radius: 15px;
-      transform-style: preserve-3d;
-      transition: all 0.3s ease-in-out;
-      background-color: #fff;
-      background-blend-mode: overlay;
-      clip-path: inset(0 0 0 0 round 15px);
-      box-shadow: 0 10px 20px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(255,255,255,0.2);
-    }
-
-    .card::before { /* Inner border */
-      content: '';
-      position: absolute;
-      top: 5px; right: 5px; bottom: 5px; left: 5px;
-      border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.3);
-      backdrop-filter: blur(2px);
-      z-index: 1;
-    }
-    
-    .card:hover {
-      transform: rotateY(10deg) rotateX(5deg) scale(1.1);
-      box-shadow: 0 15px 30px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.3);
-    }
-    
-    .card::after { /* Holographic glitter effect */
-      content: "";
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      border-radius: 15px;
-      background: linear-gradient(45deg, rgba(255,0,0,0.1), rgba(0,255,0,0.1), rgba(0,0,255,0.1));
-      opacity: 0;
-      transition: opacity 0.4s;
-      animation: glitter 4s infinite linear;
-    }
-
-    .card:hover::after {
-      opacity: 0.5;
-    }
-    
-    @keyframes glitter {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-
-
-    .card .suit, .card .rank {
-      position: relative;
-      z-index: 2;
-      /* Glass morphism */
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 8px;
-      padding: 5px;
-      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-      backdrop-filter: blur(5px);
-      -webkit-backdrop-filter: blur(5px);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-
-    .card .suit {
-      font-size: 50px;
-      text-align: center;
-      margin-top: 15px;
-      line-height: 1;
-    }
-
-    .card .rank {
-      font-family: 'Playfair Display', serif;
-      font-size: 40px;
-      font-weight: 900;
-    }
-
-    .hearts { background-image: linear-gradient(to top right, var(--heart-color), #ff8a80); }
-    .diamonds { background-image: linear-gradient(to top right, var(--diamond-color), #84ffff); }
-    .clubs { background-image: linear-gradient(to top right, var(--club-color), #69f0ae); }
-    .spades { background-image: linear-gradient(to top right, var(--spade-color), #888); }
-
-    .hearts .suit, .hearts .rank { color: var(--heart-color); text-shadow: 0 0 10px var(--heart-color); }
-    .diamonds .suit, .diamonds .rank { color: var(--diamond-color); text-shadow: 0 0 10px var(--diamond-color); }
-    .clubs .suit, .clubs .rank { color: var(--club-color); text-shadow: 0 0 10px var(--club-color); }
-    .spades .suit, .spades .rank { color: var(--spade-color); text-shadow: 0 0 10px var(--spade-color); }
-
     #iframe-container {
       width: 50%;
       display: flex;
@@ -155,39 +65,274 @@
         background-color: #45a049;
     }
 
+    :root {
+            --bg: #0f0f11;
+            --card-ratio: 1 / 1.5;
+            --card-width: 260px;
+            --glitter: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.15'/%3E%3C/svg%3E");
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(circle at 50% 0%, #2a2a35, transparent 70%),
+                radial-gradient(circle at 80% 90%, #1a1a20, transparent 50%);
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            perspective: 1200px; /* Deep perspective for the fan effect */
+        }
+
+        .hand {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 40px;
+        }
+
+        .card {
+            width: var(--card-width);
+            aspect-ratio: var(--card-ratio);
+            position: relative;
+            border-radius: 24px;
+            transform-style: preserve-3d;
+            flex-shrink: 0;
+            
+            /* Fan Layout: Overlap cards */
+            margin-left: -40px; 
+            
+            /* Default Physics (Overridden by inline styles) */
+            --rx: 0deg;
+            --ry: 0deg;
+            --tx: 0px;
+            --ty: 0px;
+            --mx: 50%; /* Light position X */
+            --my: 50%; /* Light position Y */
+            --op: 1;   /* Opacity of effects */
+            
+            /* The Static Pose */
+            transform: 
+                rotateX(var(--rx)) 
+                rotateY(var(--ry)) 
+                translate3d(var(--tx), var(--ty), 0);
+                
+            box-shadow: 
+                20px 30px 50px -10px rgba(0,0,0,0.6),
+                0 0 0 1px rgba(255,255,255,0.1) inset;
+        }
+
+        /* First card shouldn't pull left */
+        .card:first-child { margin-left: 0; }
+
+        /* --- LAYERS --- */
+        
+        .card__bg {
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background: rgba(30, 30, 35, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .card__bg::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image: var(--glitter);
+            mix-blend-mode: overlay;
+            opacity: 0.5;
+        }
+
+        /* Holographic Foil */
+        .card__foil {
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background: 
+                linear-gradient(
+                    115deg, 
+                    transparent 0%, 
+                    rgba(255,255,255,0.3) 30%, 
+                    rgba(255,0,150,0.4) 45%, 
+                    rgba(0,200,255,0.4) 55%, 
+                    transparent 70%
+                );
+            mix-blend-mode: color-dodge;
+            opacity: var(--op);
+            background-size: 200% 200%;
+            background-position: var(--mx) var(--my);
+            z-index: 2;
+        }
+
+        /* Specular Glare */
+        .card__glare {
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            z-index: 4;
+            background: radial-gradient(
+                farthest-corner at var(--mx) var(--my), 
+                rgba(255,255,255,0.7) 0%, 
+                rgba(255,255,255,0) 40%
+            );
+            opacity: var(--op);
+            mix-blend-mode: overlay;
+        }
+
+        /* --- CONTENT --- */
+        .card__content {
+            position: relative;
+            z-index: 3;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 24px;
+            color: #fff;
+            transform: translateZ(20px); /* Text floats off surface */
+            box-sizing: border-box;
+        }
+
+        .card__val {
+            font-size: 2rem;
+            font-weight: 800;
+            line-height: 1;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .card__suit { font-size: 0.8em; }
+
+        .card__center {
+            font-size: 4.5rem;
+            align-self: center;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
+            background: linear-gradient(to bottom right, #fff, var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .card__name {
+            text-align: center;
+            font-size: 0.75rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            opacity: 0.8;
+            font-weight: 600;
+            margin-top: -10px;
+        }
+
+        /* --- SUIT COLORS & VARIATIONS --- */
+        .card[data-suit="spades"] { 
+            --accent: #bd00ff; 
+            background: linear-gradient(to bottom, #1a1a1a, #000); 
+        }
+        .card[data-suit="hearts"] { 
+            --accent: #ff0055; 
+            background: linear-gradient(to bottom, #29000f, #000);
+        }
+        .card[data-suit="diamonds"] { 
+            --accent: #ffd700; 
+            background: linear-gradient(to bottom, #1f1a00, #000);
+        }
+        .card[data-suit="clubs"] { 
+            --accent: #00ff9d; 
+            background: linear-gradient(to bottom, #001f13, #000);
+        }
+        .card[data-suit="joker"] { 
+            --accent: #fff; 
+            background: conic-gradient(from 0deg, #222, #111, #222); 
+        }
+
   </style>
 </head>
 <body>
 
-  <div id="card-container">
-    <div class="card hearts">
-      <div class="rank">A</div>
-      <div class="suit">&hearts;</div>
+  <div id="card-container hand" style="
+  flex-grow: 1;
+
+  display: flex;
+  flex-wrap: wrap;
+">
+  
+
+
+    <div class="card" data-suit="spades" 
+         style="--rx: 5deg; --ry: -25deg; --tx: 0px; --ty: 40px; --mx: 90%; --my: 10%; --op: 0.6;">
+        <div class="card__bg"></div>
+        <div class="card__foil"></div>
+        <div class="card__glare"></div>
+        <div class="card__content">
+            <div class="card__val">A<span class="card__suit">♠</span></div>
+            <div class="card__center">♠</div>
+            <div class="card__val" style="transform: rotate(180deg); align-self: flex-end;">A<span class="card__suit">♠</span></div>
+            <div class="card__name">Architect</div>
+        </div>
     </div>
-    <div class="card diamonds">
-      <div class="rank">K</div>
-      <div class="suit">&diams;</div>
+
+    <div class="card" data-suit="hearts" 
+         style="--rx: 0deg; --ry: -15deg; --tx: 0px; --ty: 10px; --mx: 70%; --my: 30%; --op: 0.8;">
+        <div class="card__bg"></div>
+        <div class="card__foil"></div>
+        <div class="card__glare"></div>
+        <div class="card__content">
+            <div class="card__val">K<span class="card__suit">♥</span></div>
+            <div class="card__center">♥</div>
+            <div class="card__val" style="transform: rotate(180deg); align-self: flex-end;">K<span class="card__suit">♥</span></div>
+            <div class="card__name">Sovereign</div>
+        </div>
     </div>
-    <div class="card clubs">
-      <div class="rank">Q</div>
-      <div class="suit">&clubs;</div>
+
+    <div class="card" data-suit="diamonds" 
+         style="--rx: 10deg; --ry: 0deg; --tx: 0px; --ty: -10px; --mx: 50%; --my: 50%; --op: 1;">
+        <div class="card__bg"></div>
+        <div class="card__foil"></div>
+        <div class="card__glare"></div>
+        <div class="card__content">
+            <div class="card__val">Q<span class="card__suit">♦</span></div>
+            <div class="card__center">♦</div>
+            <div class="card__val" style="transform: rotate(180deg); align-self: flex-end;">Q<span class="card__suit">♦</span></div>
+            <div class="card__name">Oracle</div>
+        </div>
     </div>
-    <div class="card spades">
-      <div class="rank">J</div>
-      <div class="suit">&spades;</div>
+
+    <div class="card" data-suit="clubs" 
+         style="--rx: 0deg; --ry: 15deg; --tx: 0px; --ty: 10px; --mx: 30%; --my: 30%; --op: 0.8;">
+        <div class="card__bg"></div>
+        <div class="card__foil"></div>
+        <div class="card__glare"></div>
+        <div class="card__content">
+            <div class="card__val">J<span class="card__suit">♣</span></div>
+            <div class="card__center">♣</div>
+            <div class="card__val" style="transform: rotate(180deg); align-self: flex-end;">J<span class="card__suit">♣</span></div>
+            <div class="card__name">Scout</div>
+        </div>
     </div>
-    <div class="card hearts">
-      <div class="rank">10</div>
-      <div class="suit">&hearts;</div>
+
+    <div class="card" data-suit="joker" 
+         style="--rx: 20deg; --ry: 30deg; --tx: -10px; --ty: 50px; --mx: 10%; --my: 80%; --op: 0.7;">
+        <div class="card__bg"></div>
+        <div class="card__foil"></div>
+        <div class="card__glare"></div>
+        <div class="card__content">
+            <div class="card__val">★</div>
+            <div class="card__center">☺</div>
+            <div class="card__val" style="transform: rotate(180deg); align-self: flex-end;">★</div>
+            <div class="card__name">Chaos</div>
+        </div>
     </div>
-    <div class="card diamonds">
-        <div class="rank">9</div>
-        <div class="suit">&diams;</div>
-    </div>
-    <div class="card clubs">
-        <div class="rank">8</div>
-        <div class="suit">&clubs;</div>
-    </div>
+
+
+
+
+
   </div>
 
   <div id="iframe-container">
