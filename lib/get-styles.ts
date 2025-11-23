@@ -55,7 +55,9 @@ function generateCSSPropertiesData() {
 "use strict";
 
 class DefaultValueFilter {
-  constructor(element) {
+  iframe: HTMLIFrameElement;
+  element: Element;
+  constructor(element: Element) {
     this.iframe = document.createElement('iframe');
     // visually-hidden styles.
     this.iframe.style.cssText = `
@@ -71,7 +73,7 @@ class DefaultValueFilter {
     document.body.appendChild(this.iframe);
   }
 
-  removeDefaultValues(style, tagName, pseudoElement) {
+  removeDefaultValues(style: CSSStyleDeclaration, tagName: string, pseudoElement: string | null) {
     let property, avalue, bvalue, cloneStyle;
     const output = {};
     const clone = this.element.ownerDocument.createElement(tagName);
@@ -180,7 +182,7 @@ class Snapshooter {
 }
 
 // Main library file
-function getNonDefaultComputedStyles(element) {
+export function getNonDefaultComputedStyles(element) {
   const cssData = generateCSSPropertiesData();
   const filter = new DefaultValueFilter(element);
   const snapshooter = new Snapshooter(cssData);

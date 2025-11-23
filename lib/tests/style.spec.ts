@@ -1,6 +1,6 @@
-const { test, expect } = require('@playwright/test');
-
-const path = require('path');
+import { test, expect } from '@playwright/test';
+import path from 'path';
+import { getNonDefaultComputedStyles } from '../get-styles.ts';
 
 test.describe('getNonDefaultComputedStyles', () => {
   test('should return non-default styles for an element and its children', async ({ page }) => {

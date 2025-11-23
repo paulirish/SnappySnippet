@@ -4,14 +4,17 @@
   "description": "",
   "main": "get-styles.js",
   "scripts": {
-    "test": "playwright test"
+    "test": "playwright test",
+    "typecheck": "tsc"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "devDependencies": {
     "@playwright/test": "^1.56.1",
-    "playwright": "^1.56.1"
+    "@types/node": "^24.10.1",
+    "playwright": "^1.56.1",
+    "typescript": "^5.9.3"
   }
 }
