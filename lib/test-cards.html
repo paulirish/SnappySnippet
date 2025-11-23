@@ -3,52 +3,158 @@
 <head>
   <title>Playing Card Style Test</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@900&family=Roboto:wght@400;700&display=swap');
+
+    :root {
+      --card-width: 150px;
+      --card-height: 225px;
+      --red-suit-color: #ff4136;
+      --black-suit-color: #222;
+      --diamond-color: #00c9ff;
+      --heart-color: #ff0055;
+      --spade-color: #333;
+      --club-color: #00a500;
+    }
+
     body {
       display: flex;
-      font-family: sans-serif;
+      font-family: 'Roboto', sans-serif;
+      background-color: #1a1a1d;
+      color: #fff;
+      padding: 20px;
+      gap: 40px;
     }
+
     #card-container {
       width: 50%;
       display: flex;
       flex-wrap: wrap;
+      gap: 20px;
+      perspective: 1000px;
     }
+
     .card {
-      border: 2px solid black;
-      border-radius: 10px;
-      width: 100px;
-      height: 150px;
+      width: var(--card-width);
+      height: var(--card-height);
       margin: 10px;
       padding: 10px;
       cursor: pointer;
-      box-shadow: 3px 3px 5px rgba(0,0,0,0.3);
-      transition: all 0.2s ease-in-out;
+      position: relative;
+      border-radius: 15px;
+      transform-style: preserve-3d;
+      transition: all 0.3s ease-in-out;
+      background-color: #fff;
+      background-blend-mode: overlay;
+      clip-path: inset(0 0 0 0 round 15px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(255,255,255,0.2);
     }
+
+    .card::before { /* Inner border */
+      content: '';
+      position: absolute;
+      top: 5px; right: 5px; bottom: 5px; left: 5px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.3);
+      backdrop-filter: blur(2px);
+      z-index: 1;
+    }
+    
     .card:hover {
-      transform: scale(1.05);
+      transform: rotateY(10deg) rotateX(5deg) scale(1.1);
+      box-shadow: 0 15px 30px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.3);
     }
+    
+    .card::after { /* Holographic glitter effect */
+      content: "";
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      border-radius: 15px;
+      background: linear-gradient(45deg, rgba(255,0,0,0.1), rgba(0,255,0,0.1), rgba(0,0,255,0.1));
+      opacity: 0;
+      transition: opacity 0.4s;
+      animation: glitter 4s infinite linear;
+    }
+
+    .card:hover::after {
+      opacity: 0.5;
+    }
+    
+    @keyframes glitter {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+
+    .card .suit, .card .rank {
+      position: relative;
+      z-index: 2;
+      /* Glass morphism */
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 5px;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
     .card .suit {
-      font-size: 40px;
+      font-size: 50px;
       text-align: center;
+      margin-top: 15px;
+      line-height: 1;
     }
+
     .card .rank {
-      font-size: 30px;
-      font-weight: bold;
+      font-family: 'Playfair Display', serif;
+      font-size: 40px;
+      font-weight: 900;
     }
-    .hearts .suit { color: red; }
-    .diamonds .suit { color: red; }
-    .clubs .suit { color: black; }
-    .spades .suit { color: black; }
+
+    .hearts { background-image: linear-gradient(to top right, var(--heart-color), #ff8a80); }
+    .diamonds { background-image: linear-gradient(to top right, var(--diamond-color), #84ffff); }
+    .clubs { background-image: linear-gradient(to top right, var(--club-color), #69f0ae); }
+    .spades { background-image: linear-gradient(to top right, var(--spade-color), #888); }
+
+    .hearts .suit, .hearts .rank { color: var(--heart-color); text-shadow: 0 0 10px var(--heart-color); }
+    .diamonds .suit, .diamonds .rank { color: var(--diamond-color); text-shadow: 0 0 10px var(--diamond-color); }
+    .clubs .suit, .clubs .rank { color: var(--club-color); text-shadow: 0 0 10px var(--club-color); }
+    .spades .suit, .spades .rank { color: var(--spade-color); text-shadow: 0 0 10px var(--spade-color); }
 
     #iframe-container {
       width: 50%;
       display: flex;
       flex-direction: column;
+      gap: 10px;
     }
+
     iframe {
-      width: 100%;
-      height: 400px;
-      border: 1px solid #ccc;
+      flex-grow: 1;
+      border: 2px solid #555;
+      border-radius: 10px;
+      background: #2b2b2e;
     }
+    
+    #iframe-controls button {
+        background-color: #4CAF50; /* Green */
+        border: none;
+        color: white;
+        padding: 15px 32px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        margin: 4px 2px;
+        cursor: pointer;
+        border-radius: 8px;
+        transition: background-color 0.3s;
+    }
+    #iframe-controls button:hover {
+        background-color: #45a049;
+    }
+
   </style>
 </head>
 <body>
@@ -86,7 +192,7 @@
 
   <div id="iframe-container">
     <iframe id="card-iframe"></iframe>
-    <div>
+    <div id="iframe-controls">
       <button id="prev-btn">Previous</button>
       <button id="next-btn">Next</button>
     </div>
@@ -106,20 +212,31 @@
         element.style[prop] = styleData.styles[prop];
       }
       for (let i = 0; i < styleData.children.length; i++) {
-        applyStyles(element.children[i], styleData.children[i]);
+        const childElement = element.children[i];
+        const childStyleData = styleData.children[i];
+        if (childElement && childStyleData) {
+          applyStyles(childElement, childStyleData);
+        }
       }
     }
 
     function updateIframe() {
       const card = cards[currentCardIndex];
       const cardStyles = getNonDefaultComputedStyles(card);
+      const cardClone = card.cloneNode(true);
+      
+      const iframeDoc = iframe.contentDocument;
+      iframeDoc.body.innerHTML = ''; // Clear previous content
+      iframeDoc.body.style.margin = '0';
+      iframeDoc.body.style.display = 'flex';
+      iframeDoc.body.style.justifyContent = 'center';
+      iframeDoc.body.style.alignItems = 'center';
+      iframeDoc.body.style.height = '100vh';
+      iframeDoc.body.style.background = '#2b2b2e';
 
-      iframe.srcdoc = card.outerHTML;
 
-      iframe.onload = () => {
-        const iframeCard = iframe.contentDocument.body.firstChild;
-        applyStyles(iframeCard, cardStyles);
-      };
+      iframeDoc.body.appendChild(cardClone);
+      applyStyles(cardClone, cardStyles);
     }
 
     nextBtn.addEventListener('click', () => {
@@ -133,7 +250,7 @@
     });
 
     // Initial load
-    updateIframe();
+    iframe.onload = updateIframe;
   </script>
 
 </body>
