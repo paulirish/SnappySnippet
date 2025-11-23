@@ -372,12 +372,20 @@
       
       const iframeDoc = iframe.contentDocument;
       iframeDoc.body.innerHTML = ''; // Clear previous content
+      iframeDoc.body.style.cssText = `
+      background-image:
+      linear-gradient(45deg, #ccc 26%, transparent 26%), 
+      linear-gradient(135deg, #ccc 26%, transparent 26%),
+      linear-gradient(45deg, transparent 75%, #ccc 75%),
+      linear-gradient(135deg, transparent 75%, #ccc 75%);
+          background-size: 20px 20px; /* Must be a square */
+          background-position: 0 0, 10px 0, 10px -10px, 0px 10px; /* Must be half of one side of the square */
+      `
       iframeDoc.body.style.margin = '0';
       iframeDoc.body.style.display = 'flex';
       iframeDoc.body.style.justifyContent = 'center';
       iframeDoc.body.style.alignItems = 'center';
       iframeDoc.body.style.height = '100vh';
-      iframeDoc.body.style.background = '#2b2b2e';
 
 
       iframeDoc.body.appendChild(cardClone);
