@@ -10,7 +10,7 @@ test.describe('getNonDefaultComputedStyles', () => {
   test('should return non-default styles for an element and its children', async ({ page }) => {
     const filePath = path.resolve(__dirname, '../index.html');
     await page.goto(`file://${filePath}`);
-    await page.addScriptTag({ path: 'get-styles.iife.js' });
+    await page.addScriptTag({ path: 'dist/get-styles.iife.js' });
 
     const styles = await page.evaluate(() => {
       const element = document.querySelector('.container');
