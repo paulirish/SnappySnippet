@@ -15,8 +15,17 @@ export class DefaultValueFilter {
   white-space: nowrap;
   width: 1px;`;
     this.element = element;
-    // Does it need to be attached?
     document.body.appendChild(this.iframe);
+    // Ensure the iframe's body has a clean slate for default style computations.
+    if (this.iframe.contentWindow) {
+      const iframeBody = this.iframe.contentWindow.document.body;
+      iframeBody.style.margin = '0';
+      iframeBody.style.padding = '0';
+      iframeBody.style.border = '0';
+      iframeBody.style.background = 'none';
+      iframeBody.style.color = 'initial';
+      iframeBody.style.font = 'initial';
+    }
   }
 
   removeDefaultValues(style: CSSStyleDeclaration, tagName: string, pseudoElement: string | null): Record<string, string> {

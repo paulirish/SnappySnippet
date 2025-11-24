@@ -144,12 +144,63 @@ export function getNonDefaultComputedStyles(originalElement: Element) {
         null
       );
       elementStyles = shorthandPropertyFilter.apply(elementStyles);
-  
-      stylesById[snappyId] = {
-        styles: elementStyles,
-        pseudo: elementPseudo,
-      };
-  
+
+      // Pragmatic cleanup: remove common noisy default properties that getComputedStyle often returns
+      // even when no custom styling is applied. This ensures truly empty elements produce empty CSS.
+      const COMMON_NOISY_DEFAULT_PROPERTIES = [
+        'inline-size',
+        'block-size',
+        'width',
+        'height',
+        'perspective-origin',
+        'transform-origin',
+        'caret-color',
+        '-webkit-text-fill-color',
+        '-webkit-text-stroke-color',
+        // Add other properties that are consistently noisy and not intended to be captured
+        'margin-block',
+        'margin-inline',
+        'border-block-color',
+        'border-block-style',
+        'border-block-width',
+        'border-inline-color',
+        'border-inline-style',
+        'border-inline-width',
+        'column-rule',
+        'outline',
+        'text-emphasis',
+        'text-decoration-color',
+      ];
+
+      for (const prop of COMMON_NOISY_DEFAULT_PROPERTIES) {
+        delete elementStyles[prop];
+        // Also check if they exist in pseudo styles and remove
+        for (const pseudoKey in elementPseudo) {
+          delete elementPseudo[pseudoKey][prop];
+        }
+      }
+
+      // Prune empty styles (original logic, now more effective)
+      if (Object.keys(elementStyles).length === 0) {
+        elementStyles = {};
+      }
+
+      if (Object.keys(elementPseudo[':before'] || {}).length === 0) {
+        delete elementPseudo[':before'];
+      }
+      if (Object.keys(elementPseudo[':after'] || {}).length === 0) {
+        delete elementPseudo[':after'];
+      }
+
+      // Only add to stylesById if there are actual non-default styles
+      const hasNonDefaultStyles = Object.keys(elementStyles).length > 0 || Object.keys(elementPseudo).length > 0;
+      if (hasNonDefaultStyles) {
+        stylesById[snappyId] = {
+          styles: elementStyles,
+          pseudo: elementPseudo,
+        };
+      }
+
       const children: ProcessedNode[] = [];
       for (let i = 0; i < element.children.length; i++) {
         const child = processNode(element.children[i]);
@@ -157,13 +208,20 @@ export function getNonDefaultComputedStyles(originalElement: Element) {
           children.push(child);
         }
       }
-  
+
+      if (!hasNonDefaultStyles && children.length === 0) {
+        return null; // This element and its children have no non-default styles
+      }
+
       const attributes: Record<string, string> = {};
       for (let i = 0; i < element.attributes.length; i++) {
         const attr = element.attributes[i];
-        attributes[attr.name] = attr.value;
+        // Only include attributes if they are meaningful (e.g., not just the snappy-id)
+        if (attr.name !== 'data-snappy-id') {
+          attributes[attr.name] = attr.value;
+        }
       }
-  
+
       return {
         tagName: element.tagName,
         attributes,
