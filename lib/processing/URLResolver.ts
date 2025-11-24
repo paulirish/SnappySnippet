@@ -1,16 +1,17 @@
 'use strict';
 
 export class URLResolver {
-  static resolve(value: string, baseURI: string): string {
-    const urlRegex = /url\((?!['"]?(?:data:|https|http):)['"]?([^'")]+)['"]?\)/g;
-    return value.replace(urlRegex, (match, url) => {
+  static resolve(propertyValue: string, baseURI: string): string {
+    return propertyValue.replace(/url\([\'"]?(.*?)["']?\)/g, (match, url) => {
       try {
-        const absoluteURL = new URL(url, baseURI).href;
-        return `url('${absoluteURL}')`;
+        if (!url.startsWith('data:') && !url.startsWith('http')) {
+          const resolvedUrl = new URL(url, baseURI).href;
+          return `url('${resolvedUrl}')`;
+        }
       } catch (e) {
-        // Ignore invalid URLs
-        return match;
+        console.error('Error resolving URL:', url, e);
       }
+      return match;
     });
   }
 }

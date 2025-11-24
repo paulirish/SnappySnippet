@@ -90,7 +90,9 @@ import {SameRulesCombiner} from './processing/SameRulesCombiner.js';
 
 // Main library file
 
-export function getNonDefaultComputedStyles(element: Element) {
+export function getNonDefaultComputedStyles(originalElement: Element) {
+  const element = originalElement.cloneNode(true) as Element;
+
   const cssData = generateCSSPropertiesData();
 
   const defaultValueFilter = new DefaultValueFilter(element);
@@ -171,11 +173,13 @@ export function getNonDefaultComputedStyles(element: Element) {
       };
     }
   
-    const processedRoot = processNode(element);
-    defaultValueFilter.iframe.remove();
-    const combinedCssRules = SameRulesCombiner.combine(stylesById);
-    const cssString = CSSStringifier.stringify(combinedCssRules);
-  
+      document.body.appendChild(element);
+    
+      const processedRoot = processNode(element);
+      defaultValueFilter.iframe.remove();
+      document.body.removeChild(element);
+      const combinedCssRules = SameRulesCombiner.combine(stylesById);
+      const cssString = CSSStringifier.stringify(combinedCssRules);  
     return {
       html: element.outerHTML,
       css: cssString,

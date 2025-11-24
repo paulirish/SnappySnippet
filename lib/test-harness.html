@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { margin: 0; }
+    .container {
+      border: 1px solid black;
+      color: red;
+    }
+    .container > p {
+      font: 16px sans-serif;
+    }
+    .url-test {
+      background-image: url(../gfx/devtools-logo.png);
+    }
+    .shorthand-test {
+      margin-top: 10px;
+      margin-right: 10px;
+      margin-bottom: 10px;
+      margin-left: 10px;
+    }
+    .shorthand-border-test {
+      border-width: 2px;
+      border-style: solid;
+      border-color: blue;
+    }
+    .combined-rules-1 {
+      color: green;
+      font-size: 18px;
+    }
+    .combined-rules-2 {
+      color: green;
+      font-size: 18px;
+    }
+    .pseudo-element-test::before {
+      content: 'hello';
+      color: purple;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <p>
+      <span>Hello World</span>
+    </p>
+  </div>
+  <div class="url-test"></div>
+  <div class="shorthand-test"></div>
+  <div class="shorthand-border-test"></div>
+  <div class="combined-rules-1"></div>
+  <div class="combined-rules-2"></div>
+  <div class="pseudo-element-test"></div>
+</body>
+</html>
