@@ -22,7 +22,8 @@ test.describe('getNonDefaultComputedStyles - HTML Extraction & Unique ID Assignm
     expect(result).not.toBeNull();
     expect(result.html).toBeDefined();
 
-    const expectedHtmlPattern = /<div class="container" data-snappy-id="snappy-\d+">\s*<p data-snappy-id="snappy-\d+">\s*<span data-snappy-id="snappy-\d+">Hello World<\/span>\s*<\/p>\s*<\/div>/;
+    const expectedHtmlPattern =
+      /<div class="container" data-snappy-id="snappy-\d+">\s*<p data-snappy-id="snappy-\d+">\s*<span data-snappy-id="snappy-\d+">Hello World<\/span>\s*<\/p>\s*<\/div>/;
     expect(result.html).toMatch(expectedHtmlPattern);
 
     const snappyIds = (result.html.match(/data-snappy-id="(snappy-\d+)"/g) || []).map(id => id.split('=')[1]);
@@ -97,7 +98,9 @@ test.describe('getNonDefaultComputedStyles - URL Resolving', () => {
 
     expect(result).not.toBeNull();
     expect(result.css).toBeDefined();
-    expect(result.css).toContain('background: rgba(0, 0, 0, 0) url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=") repeat scroll 0% 0% / auto padding-box border-box');
+    expect(result.css).toContain(
+      'background: rgba(0, 0, 0, 0) url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=") repeat scroll 0% 0% / auto padding-box border-box'
+    );
   });
 });
 
@@ -184,13 +187,12 @@ test.describe('getNonDefaultComputedStyles - CSS Rule Combining', () => {
 
     // Expect a single rule combining the two selectors
     // The exact data-snappy-id values will vary, so we use regex
-        expect(result.css).toContain('color: rgb(0, 128, 0);');
-        expect(result.css).toContain('font: 18px Times;');
-        expect(result.css).not.toContain('font-size:');
-        // Verify that the two selectors are combined. The exact order of elements might vary,
-        // and other default styles might be present, so we check for presence and combination.
-        expect(result.css).toMatch(/ \[data-snappy-id="snappy-\d+"\]\, \[data-snappy-id="snappy-\d+"\]/);
-    
+    expect(result.css).toContain('color: rgb(0, 128, 0);');
+    expect(result.css).toContain('font: 18px Times;');
+    expect(result.css).not.toContain('font-size:');
+    // Verify that the two selectors are combined. The exact order of elements might vary,
+    // and other default styles might be present, so we check for presence and combination.
+    expect(result.css).toMatch(/ \[data-snappy-id="snappy-\d+"\]\, \[data-snappy-id="snappy-\d+"\]/);
   });
 
   test('should combine rules for a pseudo-element and a regular element if styles are identical', async ({page}) => {
@@ -218,8 +220,6 @@ test.describe('getNonDefaultComputedStyles - CSS Rule Combining', () => {
     expect(result.css).toContain('color: rgb(128, 0, 128);');
     // Verify that the pseudo-element and regular element selectors are combined.
     expect(result.css).toContain('[data-snappy-id="snappy-3"], [data-snappy-id="snappy-3"]:before');
-
-    
   });
 
   test('should create distinct rules for elements with different styles', async ({page}) => {
@@ -254,8 +254,12 @@ test.describe('getNonDefaultComputedStyles - CSS Rule Combining', () => {
     expect(result.css).not.toContain('background-color: rgb(0, 0, 255);');
 
     // Ensure they are not combined, by checking for unique selectors with their styles
-    expect(result.css).toMatch(/\S*\[data-snappy-id="snappy-\d+"\] \{[^}]*background: rgb\(255, 0, 0\) none repeat scroll 0% 0% \/ auto padding-box border-box;[^}]*}/);
-    expect(result.css).toMatch(/\S*\[data-snappy-id="snappy-\d+"\] \{[^}]*background: rgb\(0, 0, 255\) none repeat scroll 0% 0% \/ auto padding-box border-box;[^}]*}/);
+    expect(result.css).toMatch(
+      /\S*\[data-snappy-id="snappy-\d+"\] \{[^}]*background: rgb\(255, 0, 0\) none repeat scroll 0% 0% \/ auto padding-box border-box;[^}]*}/
+    );
+    expect(result.css).toMatch(
+      /\S*\[data-snappy-id="snappy-\d+"\] \{[^}]*background: rgb\(0, 0, 255\) none repeat scroll 0% 0% \/ auto padding-box border-box;[^}]*}/
+    );
   });
 });
 
