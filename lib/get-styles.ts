@@ -1,3 +1,8 @@
+'use strict';
+
+import {DefaultValueFilter} from './filters/DefaultValueFilter.js';
+import {ShorthandPropertyFilter} from './filters/ShorthandPropertyFilter.js';
+
 interface ProcessedNode {
   tagName: string;
   attributes: Record<string, string>;
@@ -6,37 +11,20 @@ interface ProcessedNode {
   children: ProcessedNode[];
 }
 
-import {DefaultValueFilter} from './filters/DefaultValueFilter.js';
-
-import {ShorthandPropertyFilter} from './filters/ShorthandPropertyFilter.js';
-
-('use strict');
 
 function generateCSSPropertiesData() {
-  'use strict';
-
   const element = document.createElement('div');
-
   const {style} = element;
-
-  const computedStyle = getComputedStyle(element);
-
-  const cssProperties = new Set<string>();
-
-  const cssShorthands = new Map<string, string[]>();
-
-  const cssShorthandsForLonghand = new Map<string, Set<string>>();
-
-  const cssLonghands = new Set<string>();
-
-  const cssAliases = new Map<string, string>();
-
-  const initialValues = new Map<string, string>();
-
-  for (let obj: CSSStyleDeclaration | null = style; obj; obj = Reflect.getPrototypeOf(obj) as any) {
+    const computedStyle = getComputedStyle(element);
+    const cssProperties = new Set<string>();
+    const cssShorthands = new Map<string, string[]>();
+    const cssShorthandsForLonghand = new Map<string, Set<string>>();
+    const cssLonghands = new Set<string>();
+    const cssAliases = new Map<string, string>();
+    const initialValues = new Map<string, string>();
+    for (let obj: CSSStyleDeclaration | null = style; obj; obj = Reflect.getPrototypeOf(obj) as any) {
     for (let name of Object.getOwnPropertyNames(obj)) {
       const property = name.replace(/[A-Z]/g, c => '-' + c.toLowerCase());
-
       if (CSS.supports(property, 'initial')) {
         cssProperties.add(property);
       }
@@ -45,7 +33,6 @@ function generateCSSPropertiesData() {
 
   for (const property of Array.from(cssProperties)) {
     style.cssText = '';
-
     style.setProperty(property, 'initial');
 
     if (style.length > 1) {
@@ -69,15 +56,10 @@ function generateCSSPropertiesData() {
 
   const data = {
     cssProperties,
-
     cssShorthands,
-
     cssShorthandsForLonghand,
-
     cssLonghands,
-
     cssAliases,
-
     initialValues,
   };
 
@@ -92,15 +74,10 @@ import {SameRulesCombiner} from './processing/SameRulesCombiner.js';
 
 export function getNonDefaultComputedStyles(originalElement: Element) {
   const element = originalElement.cloneNode(true) as Element;
-
   const cssData = generateCSSPropertiesData();
-
   const defaultValueFilter = new DefaultValueFilter(element);
-
   const shorthandPropertyFilter = new ShorthandPropertyFilter(cssData.cssShorthands, cssData.cssShorthandsForLonghand);
-
   const snapshooter = new Snapshooter(cssData);
-
   const stylesById = {} as Record<string, any>;
 
   let idCounter = 0;
