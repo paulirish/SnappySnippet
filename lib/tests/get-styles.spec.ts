@@ -133,7 +133,7 @@ test.describe('getNonDefaultComputedStyles - Shorthand Property Filtering', () =
 
     expect(result).not.toBeNull();
     expect(result.css).toBeDefined();
-    expect(result.css).toContain('border: 2px solid blue');
+    expect(result.css).toContain('border: 2px solid rgb(0, 0, 255)');
     expect(result.css).not.toContain('border-width');
     expect(result.css).not.toContain('border-style');
     expect(result.css).not.toContain('border-color');
@@ -156,8 +156,8 @@ test.describe('getNonDefaultComputedStyles - Shorthand Property Filtering', () =
 
     expect(result).not.toBeNull();
     expect(result.css).toBeDefined();
-    expect(result.css).toContain('padding-top: 5px');
-    expect(result.css).toContain('padding-left: 10px');
-    expect(result.css).not.toContain('padding:'); // No shorthand expected
+    expect(result.css).toContain('padding: 5px 0px 0px 10px'); // Computed shorthand
+    expect(result.css).not.toContain('padding-top:');
+    expect(result.css).not.toContain('padding-left:');
   });
 });

@@ -1,16 +1,17 @@
 'use strict';
 
 export class CSSStringifier {
-  static stringify(combinedCssRules: Record<string, string[]>): string {
+  static stringify(combinedRules: Record<string, string[]>): string {
     let cssString = '';
 
-    for (const ruleKey in combinedCssRules) {
-      if (combinedCssRules.hasOwnProperty(ruleKey)) {
-        const selectors = combinedCssRules[ruleKey];
-        const styles = JSON.parse(ruleKey);
+    for (const styleKey in combinedRules) {
+      if (combinedRules.hasOwnProperty(styleKey)) {
+        const selectors = combinedRules[styleKey];
+        // The styleKey is a JSON string of the style object. Parse it back.
+        const styles = JSON.parse(styleKey);
 
         if (Object.keys(styles).length === 0) {
-          continue; // Skip empty style blocks
+          continue; // Skip if no styles are present for this rule
         }
 
         cssString += `${selectors.join(', ')} {
@@ -26,6 +27,7 @@ export class CSSStringifier {
 `;
       }
     }
-    return cssString;
+
+    return cssString.trim();
   }
 }

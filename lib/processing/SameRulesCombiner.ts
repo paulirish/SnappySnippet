@@ -6,32 +6,23 @@ export class SameRulesCombiner {
 
     for (const snappyId in stylesById) {
       if (stylesById.hasOwnProperty(snappyId)) {
-        const elementStyles = stylesById[snappyId].styles;
-        const elementPseudo = stylesById[snappyId].pseudo;
+        const {styles, pseudo} = stylesById[snappyId];
 
-        // Process element styles
-        if (Object.keys(elementStyles).length > 0) {
-          const stylesKey = JSON.stringify(elementStyles);
-          if (combinedRules[stylesKey]) {
-            combinedRules[stylesKey].push(`[data-snappy-id="${snappyId}"]`);
-          } else {
-            combinedRules[stylesKey] = [`[data-snappy-id="${snappyId}"]`];
-          }
+        // Process main element styles
+        const styleKey = JSON.stringify(styles);
+        if (!combinedRules[styleKey]) {
+          combinedRules[styleKey] = [];
         }
+        combinedRules[styleKey].push(`[data-snappy-id="${snappyId}"]`);
 
         // Process pseudo-element styles
-        for (const pseudoElement in elementPseudo) {
-          if (elementPseudo.hasOwnProperty(pseudoElement)) {
-            const pseudoStyles = elementPseudo[pseudoElement];
-            if (Object.keys(pseudoStyles).length > 0) {
-              const pseudoStylesKey = JSON.stringify(pseudoStyles);
-              const pseudoSelector = `[data-snappy-id="${snappyId}"]${pseudoElement}`;
-              if (combinedRules[pseudoStylesKey]) {
-                combinedRules[pseudoStylesKey].push(pseudoSelector);
-              } else {
-                combinedRules[pseudoStylesKey] = [pseudoSelector];
-              }
+        for (const pseudoElement in pseudo) {
+          if (pseudo.hasOwnProperty(pseudoElement)) {
+            const pseudoStyleKey = JSON.stringify(pseudo[pseudoElement]);
+            if (!combinedRules[pseudoStyleKey]) {
+              combinedRules[pseudoStyleKey] = [];
             }
+            combinedRules[pseudoStyleKey].push(`[data-snappy-id="${snappyId}"]${pseudoElement}`);
           }
         }
       }

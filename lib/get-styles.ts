@@ -97,7 +97,7 @@ export function getNonDefaultComputedStyles(originalElement: Element) {
 
   const defaultValueFilter = new DefaultValueFilter(element);
 
-  const shorthandPropertyFilter = new ShorthandPropertyFilter(cssData.cssShorthands);
+  const shorthandPropertyFilter = new ShorthandPropertyFilter(cssData.cssShorthands, cssData.cssShorthandsForLonghand);
 
   const snapshooter = new Snapshooter(cssData);
 

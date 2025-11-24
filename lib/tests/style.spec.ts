@@ -25,10 +25,7 @@ test.describe('getNonDefaultComputedStyles', () => {
 
     expect(styles.tagName).toBe('DIV');
     expect(styles.attributes.class).toBe('container');
-    expect(styles.styles['border-top']).toBe('1px solid rgb(0, 0, 0)');
-    expect(styles.styles['border-right']).toBe('1px solid rgb(0, 0, 0)');
-    expect(styles.styles['border-bottom']).toBe('1px solid rgb(0, 0, 0)');
-    expect(styles.styles['border-left']).toBe('1px solid rgb(0, 0, 0)');
+    expect(styles.styles.border).toBe('1px solid rgb(0, 0, 0)');
     expect(styles.styles.color).toBe('rgb(255, 0, 0)');
 
     // Check the child paragraph element's styles
