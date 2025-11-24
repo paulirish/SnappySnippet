@@ -46,8 +46,7 @@ test.describe('getNonDefaultComputedStyles - HTML Extraction & Unique ID Assignm
 test.describe('getNonDefaultComputedStyles - URL Resolving', () => {
   test.beforeEach(async ({page}) => {
     const filePath = path.resolve(__dirname, '../test-harness.html');
-    // Simulate a base URI for testing relative URLs
-    await page.goto(`file://${filePath.replaceAll('/lib/', '/test/')}`);
+    await page.goto(`file://${filePath}`);
     await page.addScriptTag({path: 'dist/get-styles.iife.js'});
   });
 
@@ -60,13 +59,10 @@ test.describe('getNonDefaultComputedStyles - URL Resolving', () => {
 
     expect(result).not.toBeNull();
     expect(result.css).toBeDefined();
-    // The exact resolved URL will depend on the test runner's environment.
-    // We'll check for the pattern of a resolved absolute URL.
-    expect(result.css).toMatch(/background-image: url\(['"]?file:\/\/.*?\/gfx\/devtools-logo.png['"]?\)/);
+    expect(result.css).toMatch(/background:.*?url\(['"]?file:\/\/.*?\/gfx\/devtools-logo.png['"]?\)/);
   });
 
   test('should keep absolute URLs unchanged', async ({page}) => {
-    // Inject an element with an absolute URL style
     await page.evaluate(() => {
       const div = document.createElement('div');
       div.className = 'absolute-url-test';
@@ -82,11 +78,10 @@ test.describe('getNonDefaultComputedStyles - URL Resolving', () => {
 
     expect(result).not.toBeNull();
     expect(result.css).toBeDefined();
-    expect(result.css).toContain('background-image: url("https://example.com/bg.png")');
+    expect(result.css).toContain('background: rgba(0, 0, 0, 0) url("https://example.com/bg.png") repeat scroll 0% 0% / auto padding-box border-box');
   });
 
   test('should keep data URIs unchanged', async ({page}) => {
-    // Inject an element with a data URI style
     await page.evaluate(() => {
       const div = document.createElement('div');
       div.className = 'data-url-test';
@@ -102,6 +97,67 @@ test.describe('getNonDefaultComputedStyles - URL Resolving', () => {
 
     expect(result).not.toBeNull();
     expect(result.css).toBeDefined();
-    expect(result.css).toContain('background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=")');
+    expect(result.css).toContain('background: rgba(0, 0, 0, 0) url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=") repeat scroll 0% 0% / auto padding-box border-box');
+  });
+});
+
+test.describe('getNonDefaultComputedStyles - Shorthand Property Filtering', () => {
+  test.beforeEach(async ({page}) => {
+    const filePath = path.resolve(__dirname, '../test-harness.html');
+    await page.goto(`file://${filePath}`);
+    await page.addScriptTag({path: 'dist/get-styles.iife.js'});
+  });
+
+  test('should remove longhand properties when shorthand is present (margin)', async ({page}) => {
+    const result = await page.evaluate(() => {
+      const element = document.querySelector('.shorthand-test');
+      if (!element) return null;
+      return SnappySnippet.getNonDefaultComputedStyles(element);
+    });
+
+    expect(result).not.toBeNull();
+    expect(result.css).toBeDefined();
+    expect(result.css).toContain('margin: 10px');
+    expect(result.css).not.toContain('margin-top');
+    expect(result.css).not.toContain('margin-right');
+    expect(result.css).not.toContain('margin-bottom');
+    expect(result.css).not.toContain('margin-left');
+  });
+
+  test('should remove longhand properties when shorthand is present (border)', async ({page}) => {
+    const result = await page.evaluate(() => {
+      const element = document.querySelector('.shorthand-border-test');
+      if (!element) return null;
+      return SnappySnippet.getNonDefaultComputedStyles(element);
+    });
+
+    expect(result).not.toBeNull();
+    expect(result.css).toBeDefined();
+    expect(result.css).toContain('border: 2px solid blue');
+    expect(result.css).not.toContain('border-width');
+    expect(result.css).not.toContain('border-style');
+    expect(result.css).not.toContain('border-color');
+  });
+
+  test('should not remove longhand properties if no shorthand is present', async ({page}) => {
+    await page.evaluate(() => {
+      const div = document.createElement('div');
+      div.className = 'no-shorthand-test';
+      div.style.paddingTop = '5px';
+      div.style.paddingLeft = '10px';
+      document.body.appendChild(div);
+    });
+
+    const result = await page.evaluate(() => {
+      const element = document.querySelector('.no-shorthand-test');
+      if (!element) return null;
+      return SnappySnippet.getNonDefaultComputedStyles(element);
+    });
+
+    expect(result).not.toBeNull();
+    expect(result.css).toBeDefined();
+    expect(result.css).toContain('padding-top: 5px');
+    expect(result.css).toContain('padding-left: 10px');
+    expect(result.css).not.toContain('padding:'); // No shorthand expected
   });
 });

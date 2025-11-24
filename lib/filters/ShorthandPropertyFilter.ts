@@ -1,7 +1,7 @@
 'use strict';
 
 export class ShorthandPropertyFilter {
-  private cssShorthands: Map<string, string[]>;
+  cssShorthands: Map<string, string[]>;
 
   constructor(cssShorthands: Map<string, string[]>) {
     this.cssShorthands = cssShorthands;
@@ -11,8 +11,8 @@ export class ShorthandPropertyFilter {
     const filteredStyles = {...styles};
 
     for (const [shorthand, longhands] of this.cssShorthands.entries()) {
+      // If the shorthand property exists in the styles, remove its corresponding longhands
       if (filteredStyles[shorthand]) {
-        // If the shorthand is present, remove all its corresponding longhands
         for (const longhand of longhands) {
           delete filteredStyles[longhand];
         }
