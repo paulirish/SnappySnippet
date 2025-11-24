@@ -270,7 +270,7 @@ test.describe('getNonDefaultComputedStyles - CSS Stringification', () => {
     await page.addScriptTag({path: 'dist/get-styles.iife.js'});
   });
 
-  test.skip('should collect font styles', async ({page}) => {
+  test('should collect font styles', async ({page}) => {
     await page.evaluate(() => {
       const div = document.createElement('div');
       div.className = 'simple-thing-test';
@@ -287,8 +287,7 @@ test.describe('getNonDefaultComputedStyles - CSS Stringification', () => {
 
     expect(result).not.toBeNull();
     expect(result.css).toBeDefined();
-    expect(result.css).toContain('font-family: monospace;');
-    expect(result.css).toContain('font-size: 16px;');
+    expect(result.css).toContain('font: 16px monospace;');
   });
 
   test('should generate valid and formatted CSS for a simple rule', async ({page}) => {
