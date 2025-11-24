@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 export class SameRulesCombiner {
   static combine(stylesById: Record<string, any>): Record<string, string[]> {

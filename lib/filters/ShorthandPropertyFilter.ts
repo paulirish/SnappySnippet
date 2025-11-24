@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 export class ShorthandPropertyFilter {
   private cssShorthands: Map<string, string[]>;
@@ -8,7 +8,7 @@ export class ShorthandPropertyFilter {
   }
 
   apply(styles: Record<string, string>): Record<string, string> {
-    const filteredStyles = { ...styles };
+    const filteredStyles = {...styles};
 
     for (const [shorthand, longhands] of this.cssShorthands.entries()) {
       if (filteredStyles[shorthand]) {

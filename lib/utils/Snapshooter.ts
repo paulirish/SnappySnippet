@@ -1,6 +1,6 @@
-"use strict";
+'use strict';
 
-import { URLResolver } from "../processing/URLResolver.js";
+import {URLResolver} from '../processing/URLResolver.js';
 
 export class Snapshooter {
   cssData: any;
@@ -9,10 +9,7 @@ export class Snapshooter {
     this.cssData = cssData;
     this.shorthandsToCamelCase = {} as Record<string, string>;
     for (const [shorthand, _] of this.cssData.cssShorthands) {
-      this.shorthandsToCamelCase[shorthand] = shorthand.replace(
-        /-([a-z])/g,
-        (_: string, char: string) => char.toUpperCase(),
-      );
+      this.shorthandsToCamelCase[shorthand] = shorthand.replace(/-([a-z])/g, (_: string, char: string) => char.toUpperCase());
     }
   }
 
@@ -27,7 +24,7 @@ export class Snapshooter {
     }
 
     // Work around http://crbug.com/313670 (the "content" property is not present as a computed style indexed property value).
-    output["content"] = this.fixContentProperty(style.content);
+    output['content'] = this.fixContentProperty(style.content);
 
     // Since shorthand properties are not available in the indexed array, copy them from named properties
     for (cssName in this.shorthandsToCamelCase) {
@@ -55,11 +52,7 @@ export class Snapshooter {
         for (i = 0, l = values.length; i < l; i++) {
           value = values[i];
 
-          if (
-            value.match(
-              /^(url\()|(attr\()|normal|none|open-quote|close-quote|no-open-quote|no-close-quote|chapter_counter|'/g,
-            )
-          ) {
+          if (value.match(/^(url\()|(attr\()|normal|none|open-quote|close-quote|no-open-quote|no-close-quote|chapter_counter|'/g)) {
             output.push(value);
           } else {
             output.push("'" + value + "'");
@@ -68,22 +61,19 @@ export class Snapshooter {
       }
     }
 
-    return output.join(" ");
+    return output.join(' ');
   }
 
   dumpCSS(node: Element, pseudoElement: string | null, baseURI: string) {
     if (!node.ownerDocument.defaultView) {
       return {};
     }
-    const styles = node.ownerDocument.defaultView.getComputedStyle(
-      node,
-      pseudoElement,
-    );
+    const styles = node.ownerDocument.defaultView.getComputedStyle(node, pseudoElement);
 
     if (pseudoElement) {
       //if we are dealing with pseudoelement, check if 'content' property isn't empty
       //if it is, then we can ignore the whole element
-      if (!styles.getPropertyValue("content")) {
+      if (!styles.getPropertyValue('content')) {
         return null;
       }
     }

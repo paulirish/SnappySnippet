@@ -1,15 +1,15 @@
-import { DefaultValueFilter } from "./filters/DefaultValueFilter.js";
+import {DefaultValueFilter} from './filters/DefaultValueFilter.js';
 
-import { ShorthandPropertyFilter } from "./filters/ShorthandPropertyFilter.js";
+import {ShorthandPropertyFilter} from './filters/ShorthandPropertyFilter.js';
 
-("use strict");
+('use strict');
 
 function generateCSSPropertiesData() {
-  "use strict";
+  'use strict';
 
-  const element = document.createElement("div");
+  const element = document.createElement('div');
 
-  const { style } = element;
+  const {style} = element;
 
   const computedStyle = getComputedStyle(element);
 
@@ -25,24 +25,20 @@ function generateCSSPropertiesData() {
 
   const initialValues = new Map<string, string>();
 
-  for (
-    let obj: CSSStyleDeclaration | null = style;
-    obj;
-    obj = Reflect.getPrototypeOf(obj) as any
-  ) {
+  for (let obj: CSSStyleDeclaration | null = style; obj; obj = Reflect.getPrototypeOf(obj) as any) {
     for (let name of Object.getOwnPropertyNames(obj)) {
-      const property = name.replace(/[A-Z]/g, (c) => "-" + c.toLowerCase());
+      const property = name.replace(/[A-Z]/g, c => '-' + c.toLowerCase());
 
-      if (CSS.supports(property, "initial")) {
+      if (CSS.supports(property, 'initial')) {
         cssProperties.add(property);
       }
     }
   }
 
   for (const property of Array.from(cssProperties)) {
-    style.cssText = "";
+    style.cssText = '';
 
-    style.setProperty(property, "initial");
+    style.setProperty(property, 'initial');
 
     if (style.length > 1) {
       cssShorthands.set(property, [...style]);
@@ -80,7 +76,7 @@ function generateCSSPropertiesData() {
   return data;
 }
 
-import { CSSStringifier } from "./processing/CSSStringifier.js";
+import {CSSStringifier} from './processing/CSSStringifier.js';
 
 // Main library file
 
@@ -89,9 +85,7 @@ export function getNonDefaultComputedStyles(element: Element) {
 
   const defaultValueFilter = new DefaultValueFilter(element);
 
-  const shorthandPropertyFilter = new ShorthandPropertyFilter(
-    cssData.cssShorthands,
-  );
+  const shorthandPropertyFilter = new ShorthandPropertyFilter(cssData.cssShorthands);
 
   const snapshooter = new Snapshooter(cssData);
 
@@ -112,7 +106,7 @@ export function getNonDefaultComputedStyles(element: Element) {
 
     const snappyId = `snappy-${++idCounter}`;
 
-    clone.setAttribute("data-snappy-id", snappyId);
+    clone.setAttribute('data-snappy-id', snappyId);
 
     const baseURI = element.ownerDocument.baseURI;
 
@@ -120,39 +114,23 @@ export function getNonDefaultComputedStyles(element: Element) {
 
     let elementPseudo: Record<string, Record<string, string>> = {};
 
-    const beforeStyles = snapshooter.dumpCSS(element, ":before", baseURI);
+    const beforeStyles = snapshooter.dumpCSS(element, ':before', baseURI);
 
     if (beforeStyles) {
-      elementPseudo[":before"] = defaultValueFilter.removeDefaultValues(
-        beforeStyles as unknown as CSSStyleDeclaration,
-        element.tagName,
-        ":before",
-      );
+      elementPseudo[':before'] = defaultValueFilter.removeDefaultValues(beforeStyles as unknown as CSSStyleDeclaration, element.tagName, ':before');
 
-      elementPseudo[":before"] = shorthandPropertyFilter.apply(
-        elementPseudo[":before"],
-      );
+      elementPseudo[':before'] = shorthandPropertyFilter.apply(elementPseudo[':before']);
     }
 
-    const afterStyles = snapshooter.dumpCSS(element, ":after", baseURI);
+    const afterStyles = snapshooter.dumpCSS(element, ':after', baseURI);
 
     if (afterStyles) {
-      elementPseudo[":after"] = defaultValueFilter.removeDefaultValues(
-        afterStyles as unknown as CSSStyleDeclaration,
-        element.tagName,
-        ":after",
-      );
+      elementPseudo[':after'] = defaultValueFilter.removeDefaultValues(afterStyles as unknown as CSSStyleDeclaration, element.tagName, ':after');
 
-      elementPseudo[":after"] = shorthandPropertyFilter.apply(
-        elementPseudo[":after"],
-      );
+      elementPseudo[':after'] = shorthandPropertyFilter.apply(elementPseudo[':after']);
     }
 
-    elementStyles = defaultValueFilter.removeDefaultValues(
-      elementStyles as unknown as CSSStyleDeclaration,
-      element.tagName,
-      null,
-    );
+    elementStyles = defaultValueFilter.removeDefaultValues(elementStyles as unknown as CSSStyleDeclaration, element.tagName, null);
 
     elementStyles = shorthandPropertyFilter.apply(elementStyles);
 
