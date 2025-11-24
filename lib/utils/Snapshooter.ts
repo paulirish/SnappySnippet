@@ -1,5 +1,7 @@
 "use strict";
 
+import { URLResolver } from '../processing/URLResolver.js';
+
 export class Snapshooter {
   cssData: any;
   shorthandsToCamelCase: Record<string, string>;
@@ -11,12 +13,14 @@ export class Snapshooter {
     }
   }
 
-  styleDeclarationToSimpleObject(style: CSSStyleDeclaration) {
-    let i, l, cssName, camelCaseName;
+  styleDeclarationToSimpleObject(style: CSSStyleDeclaration, baseURI: string) {
+    let i, l, cssName;
     const output: Record<string, string> = {};
 
     for (i = 0, l = style.length; i < l; i++) {
-      output[style[i]] = style.getPropertyValue(style[i]);
+      let propertyName = style[i];
+      let propertyValue = style.getPropertyValue(propertyName);
+      output[propertyName] = URLResolver.resolve(propertyValue, baseURI);
     }
 
     // Work around http://crbug.com/313670 (the "content" property is not present as a computed style indexed property value).
@@ -25,8 +29,8 @@ export class Snapshooter {
     // Since shorthand properties are not available in the indexed array, copy them from named properties
     for (cssName in this.shorthandsToCamelCase) {
       if (this.shorthandsToCamelCase.hasOwnProperty(cssName)) {
-        camelCaseName = this.shorthandsToCamelCase[cssName];
-        output[cssName] = style.getPropertyValue(cssName);
+        let propertyValue = style.getPropertyValue(cssName);
+        output[cssName] = URLResolver.resolve(propertyValue, baseURI);
       }
     }
 
@@ -60,7 +64,7 @@ export class Snapshooter {
     return output.join(' ');
   }
 
-  dumpCSS(node: Element, pseudoElement: string | null) {
+  dumpCSS(node: Element, pseudoElement: string | null, baseURI: string) {
     if (!node.ownerDocument.defaultView) {
       return {};
     }
@@ -74,6 +78,7 @@ export class Snapshooter {
       }
     }
 
-    return this.styleDeclarationToSimpleObject(styles);
+    return this.styleDeclarationToSimpleObject(styles, baseURI);
   }
 }
+
