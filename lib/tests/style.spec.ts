@@ -12,15 +12,16 @@ test.describe('getNonDefaultComputedStyles', () => {
     await page.goto(`file://${filePath}`);
     await page.addScriptTag({path: 'dist/get-styles.iife.js'});
 
-    const styles = await page.evaluate(() => {
+    const result = await page.evaluate(() => {
       const element = document.querySelector('.container');
       if (!element) return null;
       return SnappySnippet.getNonDefaultComputedStyles(element);
     });
 
     // Check the container element's styles
-    expect(styles).not.toBeNull();
-    if (!styles) return;
+    expect(result).not.toBeNull();
+    if (!result) return;
+    const styles = result.styles;
 
     expect(styles.tagName).toBe('DIV');
     expect(styles.attributes.class).toBe('container');

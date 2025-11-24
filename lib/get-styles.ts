@@ -1,3 +1,11 @@
+interface ProcessedNode {
+  tagName: string;
+  attributes: Record<string, string>;
+  styles: Record<string, string>;
+  pseudo: Record<string, Record<string, string>>;
+  children: ProcessedNode[];
+}
+
 import {DefaultValueFilter} from './filters/DefaultValueFilter.js';
 
 import {ShorthandPropertyFilter} from './filters/ShorthandPropertyFilter.js';
@@ -77,6 +85,8 @@ function generateCSSPropertiesData() {
 }
 
 import {CSSStringifier} from './processing/CSSStringifier.js';
+import {Snapshooter} from './utils/Snapshooter.js';
+import {SameRulesCombiner} from './processing/SameRulesCombiner.js';
 
 // Main library file
 
@@ -91,73 +101,84 @@ export function getNonDefaultComputedStyles(element: Element) {
 
   const stylesById = {} as Record<string, any>;
 
-  let idCounter = 0;
-
-  function processNode(node: Node, clonedParent: Element) {
-    if (node.nodeType !== Node.ELEMENT_NODE) {
-      return;
+      let idCounter = 0;
+    function processNode(node: Node): ProcessedNode | null {
+      if (node.nodeType !== Node.ELEMENT_NODE) {
+        return null;
+      }
+  
+      const element = node as Element;
+      const snappyId = `snappy-${++idCounter}`;
+      element.setAttribute('data-snappy-id', snappyId);
+      
+      const baseURI = element.ownerDocument.baseURI;
+  
+      let elementStyles = snapshooter.dumpCSS(element, null, baseURI);
+      let elementPseudo: Record<string, Record<string, string>> = {};
+  
+      const beforeStyles = snapshooter.dumpCSS(element, ':before', baseURI);
+      if (beforeStyles) {
+        elementPseudo[':before'] = defaultValueFilter.removeDefaultValues(
+          beforeStyles as unknown as CSSStyleDeclaration,
+          element.tagName,
+          ':before'
+        );
+        elementPseudo[':before'] = shorthandPropertyFilter.apply(elementPseudo[':before']);
+      }
+  
+      const afterStyles = snapshooter.dumpCSS(element, ':after', baseURI);
+      if (afterStyles) {
+        elementPseudo[':after'] = defaultValueFilter.removeDefaultValues(
+          afterStyles as unknown as CSSStyleDeclaration,
+          element.tagName,
+          ':after'
+        );
+        elementPseudo[':after'] = shorthandPropertyFilter.apply(elementPseudo[':after']);
+      }
+  
+      elementStyles = defaultValueFilter.removeDefaultValues(
+        elementStyles as unknown as CSSStyleDeclaration,
+        element.tagName,
+        null
+      );
+      elementStyles = shorthandPropertyFilter.apply(elementStyles);
+  
+      stylesById[snappyId] = {
+        styles: elementStyles,
+        pseudo: elementPseudo,
+      };
+  
+      const children: ProcessedNode[] = [];
+      for (let i = 0; i < element.children.length; i++) {
+        const child = processNode(element.children[i]);
+        if (child) {
+          children.push(child);
+        }
+      }
+  
+      const attributes: Record<string, string> = {};
+      for (let i = 0; i < element.attributes.length; i++) {
+        const attr = element.attributes[i];
+        attributes[attr.name] = attr.value;
+      }
+  
+      return {
+        tagName: element.tagName,
+        attributes,
+        styles: elementStyles,
+        pseudo: elementPseudo,
+        children,
+      };
     }
-
-    const element = node as Element;
-
-    const clone = element.cloneNode(false) as Element;
-
-    clonedParent.appendChild(clone);
-
-    const snappyId = `snappy-${++idCounter}`;
-
-    clone.setAttribute('data-snappy-id', snappyId);
-
-    const baseURI = element.ownerDocument.baseURI;
-
-    let elementStyles = snapshooter.dumpCSS(element, null, baseURI);
-
-    let elementPseudo: Record<string, Record<string, string>> = {};
-
-    const beforeStyles = snapshooter.dumpCSS(element, ':before', baseURI);
-
-    if (beforeStyles) {
-      elementPseudo[':before'] = defaultValueFilter.removeDefaultValues(beforeStyles as unknown as CSSStyleDeclaration, element.tagName, ':before');
-
-      elementPseudo[':before'] = shorthandPropertyFilter.apply(elementPseudo[':before']);
-    }
-
-    const afterStyles = snapshooter.dumpCSS(element, ':after', baseURI);
-
-    if (afterStyles) {
-      elementPseudo[':after'] = defaultValueFilter.removeDefaultValues(afterStyles as unknown as CSSStyleDeclaration, element.tagName, ':after');
-
-      elementPseudo[':after'] = shorthandPropertyFilter.apply(elementPseudo[':after']);
-    }
-
-    elementStyles = defaultValueFilter.removeDefaultValues(elementStyles as unknown as CSSStyleDeclaration, element.tagName, null);
-
-    elementStyles = shorthandPropertyFilter.apply(elementStyles);
-
-    stylesById[snappyId] = {
-      styles: elementStyles,
-
-      pseudo: elementPseudo,
+  
+    const processedRoot = processNode(element);
+    defaultValueFilter.iframe.remove();
+    const combinedCssRules = SameRulesCombiner.combine(stylesById);
+    const cssString = CSSStringifier.stringify(combinedCssRules);
+  
+    return {
+      html: element.outerHTML,
+      css: cssString,
+      styles: processedRoot, // Return the structured style object
     };
-
-    for (let i = 0; i < element.childNodes.length; i++) {
-      processNode(element.childNodes[i], clone);
-    }
   }
-
-  const clonedRoot = element.cloneNode(false) as Element;
-
-  processNode(element, clonedRoot);
-
-  defaultValueFilter.iframe.remove();
-
-  const combinedCssRules = SameRulesCombiner.combine(stylesById);
-
-  const cssString = CSSStringifier.stringify(combinedCssRules);
-
-  return {
-    html: clonedRoot.outerHTML,
-
-    css: cssString,
-  };
-}
