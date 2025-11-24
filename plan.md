@@ -1,114 +1,113 @@
-# Plan for Extracting Computed Style Calculation into a Standalone Library
+# Design Plan: Enhancing `get-styles.ts`
 
-This document outlines the plan to extract the computed style calculation logic from the SnappySnippet Chrome extension into a standalone JavaScript library.
+This document outlines the plan to add missing features to the `get-styles.ts` library to align its functionality with the original SnappySnippet extension's capabilities. The goal is to create a modular, extensible, and robust system for extracting, processing, and formatting HTML and CSS from a DOM element.
 
-## Goal
+## 1. Core Architectural Changes
 
-The goal is to create a library that takes a DOM node as input and returns an object containing its non-default computed styles. This will allow the core logic of SnappySnippet to be used in other projects and environments.
+The main function in `get-styles.ts` will be refactored to act as an orchestrator for a series of distinct processing modules. This promotes separation of concerns and makes the pipeline easier to maintain and extend.
 
-## Core Concepts
+**New file structure:**
 
-The library will be based on the following core concepts from the existing SnappySnippet codebase:
-
-*   **Computed Style Calculation:** Using `window.getComputedStyle` to get the computed styles of a DOM element.
-*   **Default Value Filtering:** Using an iframe to create a clean environment for determining the browser's default styles for an element. This is the "iframe approach" from `DefaultValueFilter.js`.
-*   **CSS Properties Metadata:**  The library will need a comprehensive set of CSS property data, including shorthands, longhands, aliases, and initial values. This is currently gathered in `panel.js` and stored in the `xdata` object.
-
-## Library API
-
-The library will expose a single main function:
-
-```javascript
-function getNonDefaultComputedStyles(element) {
-  // ... implementation ...
-}
+```
+lib/
+├── get-styles.ts            # Main entry point and orchestrator
+├── filters/
+│   ├── DefaultValueFilter.ts  # (Existing logic, refactored)
+│   └── ShorthandPropertyFilter.ts # (New)
+├── processing/
+│   ├── SameRulesCombiner.ts   # (New)
+│   ├── CSSStringifier.ts      # (New)
+│   └── URLResolver.ts         # (New)
+└── utils/
+    └── Snapshooter.ts         # (Existing logic, refactored)
 ```
 
-*   **`element`:** A DOM element.
-*   **Returns:** An object containing the non-default computed styles for the element and its descendants. The exact structure of this object is to be determined, but it will likely be a tree structure that mirrors the DOM subtree.
+## 2. Feature Implementation Plan
 
-## Implementation Plan
+### 2.1. HTML Extraction & Unique ID Assignment
 
-### 1. Create the Library Boilerplate
+**Goal:** To precisely link CSS rules to their corresponding HTML elements, we will clone the target DOM tree and inject unique identifiers.
 
-*   Create a basic HTML file for testing and development.
-*   Create the main JavaScript file for the library.
+**Implementation:**
 
-### 2. Port the Default Value Filter
+1.  **Modify `processNode()`:**
+    *   For each element being processed, create a shallow clone using `element.cloneNode(false)`.
+    *   Generate a unique, sequential ID (e.g., `snappy-1`).
+    *   Add this ID to the cloned element as a `data-snappy-id` attribute.
+    *   The style data generated for this element will be stored in a top-level object, keyed by this ID.
+2.  **HTML Output:**
+    *   The `processNode` function will recursively build the cloned DOM tree.
+    *   A final step in the main function will serialize this cloned tree into a formatted HTML string using `clone.outerHTML`.
 
-*   Copy the `DefaultValueFilter.js` code into the new library.
-*   Adapt the code to work in a standalone context (i.e., not as a Chrome extension).
-*   The iframe creation and management logic will be the core of this part.
+### 2.2. URL Resolving
 
-### 3. Port the Snapshooter Logic
+**Goal:** Convert all relative URLs within CSS properties to absolute URLs to ensure they remain valid when extracted.
 
-*   Copy the relevant parts of `Snapshooter.js` into the new library.
-*   The key functions to port are `dumpCSS` and `styleDeclarationToSimpleObject`.
-*   The DOM traversal logic will also be needed to process the input element and its descendants.
+**Implementation:**
 
-### 4. CSS Properties Data
+1.  **Create `URLResolver.ts`:**
+    *   This module will contain a function that takes a CSS property value string and the base URI of the source document.
+    *   It will use a regular expression to find `url(...)` patterns.
+    *   For each found URL, it will check if it's relative. If so, it will resolve it against the base URI using `new URL(relativeUrl, baseURI).href`.
+2.  **Integration:**
+    *   This resolver will be called from the `Snapshooter` immediately after getting the computed style values, ensuring all URLs are absolute before any filtering occurs.
 
-*   The CSS properties data currently gathered in `panel.js` needs to be available to the library. There are two options for this:
-    1.  **Pre-compute the data:** Run the code from `panel.js` in a browser and save the `xdata` object to a JSON file. This JSON file can then be included with the library. This is the most likely approach.
-    2.  **Dynamically generate the data:** Include the necessary code in the library to generate the data at runtime. This would make the library larger and might have performance implications.
+### 2.3. Shorthand Property Filtering
 
-### 5. Integrate the Pieces
+**Goal:** Optimize the resulting CSS by removing redundant longhand properties when a shorthand property is already present.
 
-*   The main `getNonDefaultComputedStyles` function will orchestrate the process:
-    1.  It will take a DOM element as input.
-    2.  It will traverse the element and its descendants.
-    3.  For each element, it will call the ported `Snapshooter` logic to get the computed styles.
-    4.  It will then use the ported `DefaultValueFilter` logic to filter out the default values.
-    5.  Finally, it will assemble and return the resulting object of non-default styles.
+**Implementation:**
 
-### 6. Testing
+1.  **Create `ShorthandPropertyFilter.ts`:**
+    *   This filter will accept a style object (e.g., `{ "margin": "10px", "margin-top": "10px", ... }`).
+    *   It will leverage the `cssShorthands` and `cssShorthandsForLonghand` maps generated by `generateCSSPropertiesData()`.
+    *   The logic will iterate through the shorthand properties present in the style object. For each shorthand, it will delete its corresponding longhand properties from the same object.
+2.  **Integration:**
+    *   This filter will be applied after the `DefaultValueFilter` to ensure it operates on the minimal required set of styles.
 
-*   Create a comprehensive set of tests to ensure the library is working correctly.
-*   The tests should cover a variety of HTML structures and CSS properties.
-*   The tests should also cover edge cases and browser inconsistencies.
+### 2.4. CSS Rule Combining
 
+**Goal:** Reduce the size of the final CSS by grouping selectors that share the exact same set of rules.
 
-## Proposed Output Format
+**Implementation:**
 
-A nested, tree-like object that mirrors the DOM structure of the input element.
+1.  **Create `SameRulesCombiner.ts`:**
+    *   This module will take the entire map of styles (`{ "snappy-1": {...}, "snappy-2": {...} }`) as input.
+    *   It will invert the data structure, creating a map where keys are a stringified/hashed version of the style rules, and values are an array of selectors (`data-snappy-id`s) that use those rules.
+    *   Example Input: `{'#a': {color: 'red'}, '#b': {color: 'blue'}, '#c': {color: 'red'}}`
+    *   Example Output: `{'{"color":"red"}': ['#a', '#c'], '{"color":"blue"}': ['#b']}`
+2.  **Integration:**
+    *   This will be the final processing step before the CSS is stringified.
 
-### Benefits
+### 2.5. CSS Stringification
 
-1.  **Intuitive:** It preserves the parent-child relationships from the DOM, making it easy to reason about.
-2.  **Self-Contained:** The entire result for the subtree is in a single object, perfect for recursion or traversal.
-3.  **Serializable:** It can be easily converted to a JSON string if needed.
+**Goal:** Convert the processed style data object into a clean, readable CSS string.
 
-### Example
+**Implementation:**
 
-```json
-{
-  "tagName": "DIV",
-  "attributes": {
-    "class": "container"
-  },
-  "styles": {
-    "border": "1px solid rgb(0, 0, 0)",
-    "color": "rgb(255, 0, 0)"
-  },
-  "pseudo": {
-    ":before": {
-      "content": "''--''",
-      "color": "rgb(0, 0, 255)"
-    }
-  },
-  "children": [
-    {
-      "tagName": "P",
-      "attributes": {},
-      "styles": {
-        "font-size": "16px"
-      },
-      "pseudo": {},
-      "children": []
-    }
-  ]
-}
-```
+1.  **Create `CSSStringifier.ts`:**
+    *   This module will take the data structure from the `SameRulesCombiner`.
+    *   It will iterate through the combined rules.
+    *   For each rule, it will generate a comma-separated selector string from the array of `data-snappy-id`s.
+    *   It will format the properties and values within curly braces, with proper indentation.
+    *   It will also handle pseudo-element selectors correctly (e.g., `[data-snappy-id="snappy-1"]::before`).
 
+## 3. Revised Data Flow
 
-This plan provides a high-level overview of the work required to extract the computed style calculation logic into a standalone library. The next step is to start implementing the plan, beginning with the library boilerplate and porting the `DefaultValueFilter`.
+The end-to-end process will be as follows:
+
+1.  **Input:** A DOM element.
+2.  **Snapshot & Pre-processing:**
+    *   The DOM tree is traversed recursively (`processNode`).
+    *   Each element is cloned and assigned a `data-snappy-id`.
+    *   `Snapshooter` extracts computed styles.
+    *   `URLResolver` makes all URLs absolute.
+3.  **Filtering Pipeline (per-element):**
+    *   `DefaultValueFilter` removes default browser styles.
+    *   `ShorthandPropertyFilter` removes redundant longhand properties.
+4.  **Post-processing (global):**
+    *   `SameRulesCombiner` groups identical style blocks.
+    *   `CSSStringifier` converts the combined data into a final CSS string.
+5.  **Output:** An object containing two properties:
+    *   `html`: The serialized HTML string of the cloned DOM tree.
+    *   `css`: The final, optimized, and formatted CSS string.
