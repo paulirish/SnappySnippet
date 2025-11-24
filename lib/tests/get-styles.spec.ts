@@ -47,7 +47,7 @@ test.describe('getNonDefaultComputedStyles - URL Resolving', () => {
   test.beforeEach(async ({page}) => {
     const filePath = path.resolve(__dirname, '../test-harness.html');
     // Simulate a base URI for testing relative URLs
-    await page.goto(`file://${filePath.replace(///lib/, '/test/')}`);
+    await page.goto(`file://${filePath.replaceAll('/lib/', '/test/')}`);
     await page.addScriptTag({path: 'dist/get-styles.iife.js'});
   });
 
