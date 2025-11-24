@@ -2,7 +2,7 @@
 
 export class CSSStringifier {
   static stringify(combinedCssRules: Record<string, string[]>): string {
-    let cssString = '';
+    let cssString = "";
 
     for (const ruleKey in combinedCssRules) {
       if (combinedCssRules.hasOwnProperty(ruleKey)) {
@@ -13,7 +13,7 @@ export class CSSStringifier {
           continue; // Skip empty style blocks
         }
 
-        cssString += `${selectors.join(', ')} {
+        cssString += `${selectors.join(", ")} {
 `;
         for (const property in styles) {
           if (styles.hasOwnProperty(property)) {

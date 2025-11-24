@@ -1,6 +1,6 @@
-import { test, expect } from '@playwright/test';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { test, expect } from "@playwright/test";
+import path from "path";
+import { fileURLToPath } from "url";
 
 // Assuming get-styles.js is bundled and exposed globally as SnappySnippet
 // You would typically bundle get-styles.js into an IIFE for browser usage.
@@ -9,17 +9,19 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-test.describe('test-cards.html visual regression', () => {
-  test('should match inline snapshot for the first card', async ({ page }) => {
-    const filePath = path.resolve(__dirname, '../test-cards.html');
+test.describe("test-cards.html visual regression", () => {
+  test("should match inline snapshot for the first card", async ({ page }) => {
+    const filePath = path.resolve(__dirname, "../test-cards.html");
     await page.goto(`file://${filePath}`);
 
     // Load the get-styles.js into the page context
     // This assumes get-styles.js is a simple script that defines global functions
-    await page.addScriptTag({ path: path.resolve(__dirname, '../dist/get-styles.iife.js') });
+    await page.addScriptTag({
+      path: path.resolve(__dirname, "../dist/get-styles.iife.js"),
+    });
 
     // Get the first card element
-    const firstCard = await page.waitForSelector('.card:first-child');
+    const firstCard = await page.waitForSelector(".card:first-child");
 
     // Evaluate getNonDefaultComputedStyles in the page context
     const styles = await page.evaluate((cardElement) => {

@@ -111,3 +111,59 @@ The end-to-end process will be as follows:
 5.  **Output:** An object containing two properties:
     *   `html`: The serialized HTML string of the cloned DOM tree.
     *   `css`: The final, optimized, and formatted CSS string.
+
+## 4. Test Plan
+
+To ensure the correctness of the new functionality, the following tests should be implemented. These tests will be executed in a browser-like environment using a testing framework like Playwright or Jest with JSDOM.
+
+### 4.1. Test Setup
+
+-   A dedicated test HTML file (`test-harness.html`) will be created to host various DOM structures for testing.
+-   Tests will be written in TypeScript, mirroring the library's language.
+-   Helper functions will be created to mount specific HTML snippets into the test harness and run `getNonDefaultComputedStyles` on them.
+
+### 4.2. HTML Extraction & Unique ID Assignment
+
+-   **Test Case:** Simple nested structure (`div > p > span`).
+    -   **Assert:** The output `html` string correctly reflects this structure.
+    -   **Assert:** Every element in the `html` string has a `data-snappy-id` attribute.
+    -   **Assert:** All `data-snappy-id` attributes are unique.
+-   **Test Case:** Element with attributes.
+    -   **Assert:** The `html` output preserves the original attributes (`id`, `class`, etc.) on the cloned elements.
+
+### 4.3. URL Resolving
+
+-   **Test Case:** A style rule with a relative URL (`background-image: url(images/bg.png)`).
+    -   **Setup:** The test page's base URI will be `http://localhost/test/`.
+    -   **Assert:** The URL in the output CSS is resolved to `url('http://localhost/test/images/bg.png')`.
+-   **Test Case:** A style rule with an absolute URL (`background-image: url(https://example.com/bg.png)`).
+    -   **Assert:** The URL in the output CSS remains unchanged.
+-   **Test Case:** A style rule with a data URI (`background-image: url(data:image/png;base64,...)`).
+    -   **Assert:** The data URI in the output CSS remains unchanged.
+
+### 4.4. Shorthand Property Filtering
+
+-   **Test Case:** An element with `margin: 10px` and `margin-top: 10px`.
+    -   **Assert:** The output CSS for that element does **not** contain `margin-top`.
+-   **Test Case:** An element with `border-width: 1px`, `border-style: solid`, `border-color: black`.
+    -   **Assert:** The output CSS contains the shorthand `border: 1px solid black` (or its equivalent computed value).
+    -   **Assert:** The output CSS does not contain the longhand `border-width`, `border-style`, or `border-color` properties.
+
+### 4.5. CSS Rule Combining
+
+-   **Test Case:** Two sibling elements with identical styles (e.g., `color: red`).
+    -   **Assert:** The output CSS contains a single rule with a comma-separated selector, e.g., `[data-snappy-id="snappy-1"], [data-snappy-id="snappy-2"] { color: red; }`.
+-   **Test Case:** Two elements with different styles.
+    -   **Assert:** The output CSS contains two distinct rules for each element.
+-   **Test Case:** An element with a `::before` pseudo-element that has the same style as another regular element.
+    -   **Assert:** The output CSS combines them into a single rule, e.g., `[data-snappy-id="snappy-1"]::before, [data-snappy-id="snappy-2"] { ... }`.
+
+### 4.6. CSS Stringification
+
+-   **Test Case:** A simple style rule.
+    -   **Assert:** The output CSS is a valid CSS string.
+    -   **Assert:** The formatting is correct (selectors, curly braces, indentation, semicolons).
+-   **Test Case:** No non-default styles found.
+    -   **Assert:** The output `css` string is empty.
+-   **Test Case:** A rule with a pseudo-element.
+    -   **Assert:** The selector is correctly formatted, e.g., `[data-snappy-id="snappy-1"]::before`.

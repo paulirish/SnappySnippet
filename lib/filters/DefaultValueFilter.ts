@@ -1,11 +1,10 @@
-
 "use strict";
 
 export class DefaultValueFilter {
   iframe: HTMLIFrameElement;
   element: Element;
   constructor(element: Element) {
-    this.iframe = document.createElement('iframe');
+    this.iframe = document.createElement("iframe");
     // visually-hidden styles.
     this.iframe.style.cssText = `
   clip: rect(0 0 0 0);
@@ -14,20 +13,24 @@ export class DefaultValueFilter {
   overflow: hidden;
   position: absolute;
   white-space: nowrap;
-  width: 1px;`
+  width: 1px;`;
     this.element = element;
     // Does it need to be attached?
     document.body.appendChild(this.iframe);
   }
 
-  removeDefaultValues(style: CSSStyleDeclaration, tagName: string, pseudoElement: string | null): Record<string, string> {
+  removeDefaultValues(
+    style: CSSStyleDeclaration,
+    tagName: string,
+    pseudoElement: string | null,
+  ): Record<string, string> {
     let property, avalue, bvalue, cloneStyle;
     const output: Record<string, string> = {};
     const clone = this.element.ownerDocument.createElement(tagName);
 
-    if (tagName === 'A') {
+    if (tagName === "A") {
       //when <a> doesn't have href attribute, default browser styles for this element are different
-      clone.setAttribute('href', '#');
+      clone.setAttribute("href", "#");
     }
 
     if (!this.iframe.contentWindow) {
@@ -39,7 +42,10 @@ export class DefaultValueFilter {
       if (!clone.ownerDocument.defaultView) {
         return output;
       }
-      cloneStyle = clone.ownerDocument.defaultView.getComputedStyle(clone, pseudoElement);
+      cloneStyle = clone.ownerDocument.defaultView.getComputedStyle(
+        clone,
+        pseudoElement,
+      );
     } else {
       if (!clone.ownerDocument.defaultView) {
         return output;
