@@ -16,9 +16,7 @@ test.describe('test-cards.html visual regression', () => {
 
     // Load the get-styles.js into the page context
     // This assumes get-styles.js is a simple script that defines global functions
-    await page.addScriptTag({
-      path: path.resolve(__dirname, '../dist/get-styles.iife.js'),
-    });
+    await page.addScriptTag({path: path.resolve(__dirname, '../dist/get-styles.iife.js')});
 
     // Get the first card element
     const firstCard = await page.waitForSelector('.card:first-child');
