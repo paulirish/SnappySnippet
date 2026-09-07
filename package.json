@@ -7,7 +7,8 @@
   "type": "module",
   "scripts": {
     "build": "node build.js",
-    "test": "playwright test"
+    "test": "playwright test",
+    "lint": "oxlint src/ js/panel.js js/background.js js/devtools.js tests/"
   },
   "repository": {
     "type": "git",
@@ -19,16 +20,9 @@
     "url": "https://github.com/kdzwinel/SnappySnippet/issues"
   },
   "homepage": "https://github.com/kdzwinel/SnappySnippet",
-  "dependencies": {
-    "grunt": "~0.4.4",
-    "grunt-contrib-csslint": "~0.2.0",
-    "grunt-contrib-jshint": "~0.9.2",
-    "grunt-contrib-watch": "~0.6.1",
-    "grunt-html": "^5.0.0",
-    "grunt-zip": "~0.13.0"
-  },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
-    "esbuild": "^0.28.2"
+    "esbuild": "^0.28.2",
+    "oxlint": "^1.1.0"
   }
 }
