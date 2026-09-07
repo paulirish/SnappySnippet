@@ -4,7 +4,7 @@ module.exports = function (grunt) {
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
 		jshint: {
-			files: ['Gruntfile.js', 'js/**/*.js', '!js/libs/*.js'],
+			files: ['Gruntfile.js', 'js/**/*.js', 'src/**/*.js'],
 			options: {
 				evil: true,
 				camelcase: true,
@@ -13,6 +13,7 @@ module.exports = function (grunt) {
 				noempty: true,
 				strict: true,
 				loopfunc: true,
+				esversion: 11,
 				globals: {
 					jQuery: true,
 					console: true,
@@ -34,7 +35,7 @@ module.exports = function (grunt) {
 			src: '*.html'
 		},
 		zip: {
-			'snappysnippet-<%= pkg.version %>.zip': ['css/**/*', 'gfx/*.png', 'js/**/*', '*.html', 'manifest.json']
+			'snappysnippet-<%= pkg.version %>.zip': ['css/**/*', 'gfx/*.png', 'js/**/*', 'dist/**/*', '*.html', 'manifest.json']
 		}
 	});
 
