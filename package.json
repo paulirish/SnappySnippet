@@ -1,24 +1,34 @@
 {
-  "name": "SnappySnippet",
+  "name": "snappysnippet",
   "version": "0.5.0",
   "description": "Easily extract CSS and HTML from selected element. Then send it to CodePen, jsFiddle or JS Bin with one click.",
-  "main": "Gruntfile.js",
+  "main": "dist/snappysnippet.js",
+  "module": "dist/snappysnippet.esm.js",
+  "type": "module",
+  "scripts": {
+    "build": "node build.js",
+    "test": "playwright test"
+  },
   "repository": {
     "type": "git",
     "url": "git://github.com/kdzwinel/SnappySnippet.git"
   },
   "author": "Konrad Dzwinel",
-  "license": "GPL",
+  "license": "GPL-3.0",
   "bugs": {
     "url": "https://github.com/kdzwinel/SnappySnippet/issues"
   },
   "homepage": "https://github.com/kdzwinel/SnappySnippet",
   "dependencies": {
     "grunt": "~0.4.4",
+    "grunt-contrib-csslint": "~0.2.0",
     "grunt-contrib-jshint": "~0.9.2",
     "grunt-contrib-watch": "~0.6.1",
-    "grunt-contrib-csslint": "~0.2.0",
-    "grunt-zip": "~0.13.0",
-    "grunt-html": "^5.0.0"
+    "grunt-html": "^5.0.0",
+    "grunt-zip": "~0.13.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "esbuild": "^0.28.2"
   }
 }
