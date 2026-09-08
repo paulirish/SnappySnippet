@@ -3,10 +3,14 @@
  *
  * @constructor
  */
-function WebkitPropertiesFilter() {
+export function WebkitPropertiesFilter() {
 	"use strict";
 
 	function removeWebkitProperties(style) {
+		if (!style) {
+			return null;
+		}
+
 		var property,
 			output = {};
 
