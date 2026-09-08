@@ -77,7 +77,7 @@ var DEFAULT_SHORTHANDS = {
 function Snapshooter(root, xdata) {
   "use strict";
   if (!root) {
-    throw new Error("Snapshooter requires a valid root element.");
+    throw new Error("Snapshooter requires a valid DOM element or snapshot object.");
   }
   var win = root.ownerDocument && root.ownerDocument.defaultView || globalThis;
   var cssShorthandsMap = xdata && xdata.cssShorthands ? xdata.cssShorthands : null;
@@ -118,7 +118,7 @@ function Snapshooter(root, xdata) {
       if (values) {
         for (i2 = 0, l2 = values.length; i2 < l2; i2++) {
           value = values[i2];
-          if (value.match(/^(url\()|(attr\()|normal|none|open-quote|close-quote|no-open-quote|no-close-quote|chapter_counter|'/g)) {
+          if (value.match(/^(url\()|(attr\()|normal|none|open-quote|close-quote|no-open-quote|close-quote|chapter_counter|'/g)) {
             output.push(value);
           } else {
             output.push("'" + value + "'");
@@ -172,14 +172,15 @@ function Snapshooter(root, xdata) {
     result += ">";
     return result;
   }
-  function relativeURLsToAbsoluteURLs(element) {
+  function relativeURLsToAbsoluteURLs(element, origElement) {
+    var target = origElement || element;
     switch (element.nodeName) {
       case "A":
       case "AREA":
       case "LINK":
       case "BASE":
-        if (element.hasAttribute("href")) {
-          element.setAttribute("href", element.href);
+        if (element.hasAttribute("href") && target.href) {
+          element.setAttribute("href", target.href);
         }
         break;
       case "IMG":
@@ -187,18 +188,18 @@ function Snapshooter(root, xdata) {
       case "INPUT":
       case "FRAME":
       case "SCRIPT":
-        if (element.hasAttribute("src")) {
-          element.setAttribute("src", element.src);
+        if (element.hasAttribute("src") && target.src) {
+          element.setAttribute("src", target.src);
         }
         break;
       case "FORM":
-        if (element.hasAttribute("action")) {
-          element.setAttribute("action", element.action);
+        if (element.hasAttribute("action") && target.action) {
+          element.setAttribute("action", target.action);
         }
         break;
     }
   }
-  var css = [], ancestorCss = [], descendants, descendant, htmlSegments, leadingAncestorHtml, trailingAncestorHtml, reverseAncestors = [], i, l, parent, clone;
+  var css = [], ancestorCss = [], descendants, origDescendants, descendant, htmlSegments, leadingAncestorHtml, trailingAncestorHtml, reverseAncestors = [], i, l, parent, clone;
   descendants = root.getElementsByTagName("*");
   parent = root.parentElement;
   var docBody = root.ownerDocument ? root.ownerDocument.body : null;
@@ -213,14 +214,16 @@ function Snapshooter(root, xdata) {
   for (i = reverseAncestors.length - 1; i >= 0; i--) {
     ancestorCss.push(cssObjectForElement(reverseAncestors[i], true));
   }
+  origDescendants = root.getElementsByTagName("*");
   clone = root.cloneNode(true);
   descendants = clone.getElementsByTagName("*");
   idCounter = 1;
   clone.setAttribute("id", createID(clone));
+  relativeURLsToAbsoluteURLs(clone, root);
   for (i = 0, l = descendants.length; i < l; i++) {
     descendant = descendants[i];
     descendant.setAttribute("id", createID(descendant));
-    relativeURLsToAbsoluteURLs(descendant);
+    relativeURLsToAbsoluteURLs(descendant, origDescendants[i]);
   }
   htmlSegments = [];
   for (i = reverseAncestors.length - 1; i >= 0; i--) {
