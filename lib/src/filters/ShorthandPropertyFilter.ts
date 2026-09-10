@@ -1,10 +1,10 @@
-'use strict';
+import {DEFAULT_SHORTHANDS} from '../cssMetadata.ts';
+import type {StyleRule} from './DefaultValueFilter.ts';
 
 export class ShorthandPropertyFilter {
   cssShorthands: Map<string, string[]>;
   cssShorthandsForLonghand: Map<string, Set<string>>;
-  // Hardcoded list of border-related longhands for comprehensive filtering.
-  // This addresses cases where dynamic generation might miss some complex relationships.
+
   private static BORDER_LONGHANDS_TO_REMOVE = [
     'border-top-width',
     'border-right-width',
@@ -25,7 +25,6 @@ export class ShorthandPropertyFilter {
     'border-right',
     'border-bottom',
     'border-left',
-    // Also consider logical properties that might be returned by getComputedStyle
     'border-block-start',
     'border-block-end',
     'border-inline-start',
@@ -46,31 +45,81 @@ export class ShorthandPropertyFilter {
     'border-inline',
   ];
 
-  constructor(cssShorthands: Map<string, string[]>, cssShorthandsForLonghand: Map<string, Set<string>>) {
-    this.cssShorthands = cssShorthands;
-    this.cssShorthandsForLonghand = cssShorthandsForLonghand;
+  constructor(
+    cssShorthandsOrXdata?:
+      | Map<string, string[]>
+      | Record<string, string[]>
+      | {cssShorthands?: Map<string, string[]> | Record<string, string[]>; cssShorthandsForLonghand?: Map<string, Set<string>>}
+      | null,
+    cssShorthandsForLonghand?: Map<string, Set<string>> | null
+  ) {
+    this.cssShorthands = new Map();
+    this.cssShorthandsForLonghand = cssShorthandsForLonghand ?? new Map();
+
+    if (cssShorthandsOrXdata instanceof Map) {
+      this.cssShorthands = new Map(cssShorthandsOrXdata);
+    } else if (cssShorthandsOrXdata && typeof cssShorthandsOrXdata === 'object') {
+      if ('cssShorthands' in cssShorthandsOrXdata && cssShorthandsOrXdata.cssShorthands) {
+        const raw = cssShorthandsOrXdata.cssShorthands;
+        if (raw instanceof Map) {
+          this.cssShorthands = new Map(raw);
+        } else if (Array.isArray(raw)) {
+          for (const item of raw) {
+            if (Array.isArray(item) && item.length === 2) {
+              this.cssShorthands.set(item[0] as string, item[1] as string[]);
+            }
+          }
+        } else {
+          for (const [key, val] of Object.entries(raw)) {
+            this.cssShorthands.set(key, val as string[]);
+          }
+        }
+        if (cssShorthandsOrXdata.cssShorthandsForLonghand instanceof Map) {
+          this.cssShorthandsForLonghand = new Map(cssShorthandsOrXdata.cssShorthandsForLonghand);
+        }
+      } else {
+        for (const [key, val] of Object.entries(cssShorthandsOrXdata as Record<string, string[]>)) {
+          this.cssShorthands.set(key, val);
+        }
+      }
+    }
+
+    if (this.cssShorthands.size === 0) {
+      for (const [key, val] of Object.entries(DEFAULT_SHORTHANDS)) {
+        this.cssShorthands.set(key, [...val]);
+      }
+    }
+
+    if (this.cssShorthandsForLonghand.size === 0) {
+      for (const [shorthand, longhands] of this.cssShorthands.entries()) {
+        for (const longhand of longhands) {
+          const set = this.cssShorthandsForLonghand.get(longhand);
+          if (set) {
+            set.add(shorthand);
+          } else {
+            this.cssShorthandsForLonghand.set(longhand, new Set([shorthand]));
+          }
+        }
+      }
+    }
   }
 
   apply(styles: Record<string, string>): Record<string, string> {
     const filteredStyles = {...styles};
-
     const presentShorthands = new Set<string>();
 
-    // Identify all present shorthand properties
     for (const property in filteredStyles) {
-      if (this.cssShorthands.has(property)) {
+      if (this.cssShorthands.has(property) && filteredStyles[property]) {
         presentShorthands.add(property);
       }
     }
 
-    // For each present shorthand, remove its corresponding longhand properties
     for (const shorthand of presentShorthands) {
       if (shorthand === 'border' && filteredStyles[shorthand]) {
         for (const longhand of ShorthandPropertyFilter.BORDER_LONGHANDS_TO_REMOVE) {
           delete filteredStyles[longhand];
         }
       } else {
-        // Remove immediate longhands defined by cssShorthands map
         const immediateLonghands = this.cssShorthands.get(shorthand);
         if (immediateLonghands) {
           for (const longhand of immediateLonghands) {
@@ -78,9 +127,8 @@ export class ShorthandPropertyFilter {
           }
         }
 
-        // Also, iterate through all other styles and remove them if they are longhands of the current shorthand
         for (const potentialLonghand in filteredStyles) {
-          if (potentialLonghand === shorthand) continue; // Don't delete the shorthand itself
+          if (potentialLonghand === shorthand) continue;
 
           if (this.cssShorthandsForLonghand.get(potentialLonghand)?.has(shorthand)) {
             delete filteredStyles[potentialLonghand];
@@ -88,6 +136,23 @@ export class ShorthandPropertyFilter {
         }
       }
     }
+
     return filteredStyles;
+  }
+
+  process(styles: StyleRule[]): StyleRule[] {
+    const output: StyleRule[] = [];
+
+    for (const rule of styles) {
+      output.push({
+        id: rule.id,
+        tagName: rule.tagName,
+        node: rule.node ? this.apply(rule.node) : null,
+        before: rule.before ? this.apply(rule.before) : null,
+        after: rule.after ? this.apply(rule.after) : null,
+      });
+    }
+
+    return output;
   }
 }

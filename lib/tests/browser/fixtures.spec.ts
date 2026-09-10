@@ -1,373 +1,113 @@
 import {test, expect} from '@playwright/test';
-import path from 'path';
-import {fileURLToPath} from 'url';
+import path from 'node:path';
+import fs from 'node:fs';
 
-// Assuming get-styles.js is bundled and exposed globally as SnappySnippet
-// You would typically bundle get-styles.js into an IIFE for browser usage.
-// For now, we'll assume it's loaded via a script tag.
+const bundlePath = path.resolve('dist/snappysnippet.js');
+const bundleCode = fs.readFileSync(bundlePath, 'utf8');
+const fixturesHtmlPath = path.resolve('lib/fancycards.html');
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const CARD_SUITS = ['spades', 'hearts', 'diamonds', 'clubs', 'joker'] as const;
 
-test.describe('test-cards.html visual regression', () => {
-  test('should match inline snapshot for the first card', async ({page}) => {
-    const filePath = path.resolve(__dirname, '../test-cards.html');
-    await page.goto(`file://${filePath}`);
-
-    // Load the get-styles.js into the page context
-    // This assumes get-styles.js is a simple script that defines global functions
-    await page.addScriptTag({path: path.resolve(__dirname, '../dist/get-styles.iife.js')});
-
-    // Get the first card element
-    const firstCard = await page.waitForSelector('.card:first-child');
-
-    // Evaluate getNonDefaultComputedStyles in the page context
-    const styles = await page.evaluate(cardElement => {
-      // SnappySnippet is now available globally after scriptTag
-      return SnappySnippet.getNonDefaultComputedStyles(cardElement);
-    }, firstCard);
-
-    // Match inline snapshot for the styles object
-    expect(JSON.stringify(styles.styles, null, 2)).toBe(`{
-  "background-image": "linear-gradient(rgb(255, 0, 85), rgb(255, 138, 128))",
-  "block-size": "225px",
-  "border-block-end-color": "rgb(255, 255, 255)",
-  "border-block-start-color": "rgb(255, 255, 255)",
-  "border-bottom-color": "rgb(255, 255, 255)",
-  "border-bottom-left-radius": "15px",
-  "border-bottom-right-radius": "15px",
-  "border-end-end-radius": "15px",
-  "border-end-start-radius": "15px",
-  "border-inline-end-color": "rgb(255, 255, 255)",
-  "border-inline-start-color": "rgb(255, 255, 255)",
-  "border-left-color": "rgb(255, 255, 255)",
-  "border-right-color": "rgb(255, 255, 255)",
-  "border-start-end-radius": "15px",
-  "border-start-start-radius": "15px",
-  "border-top-color": "rgb(255, 255, 255)",
-  "border-top-left-radius": "15px",
-  "border-top-right-radius": "15px",
-  "bottom": "0px",
-  "box-shadow": "rgba(0, 0, 0, 0.4) 0px 10px 20px, rgba(255, 255, 255, 0.2) 0px 0px 0px 1px inset",
-  "caret-color": "rgb(255, 255, 255)",
-  "color": "rgb(255, 255, 255)",
-  "column-rule-color": "rgb(255, 255, 255)",
-  "flex-shrink": "0",
-  "font-family": "Roboto, sans-serif",
-  "height": "225px",
-  "inline-size": "150px",
-  "inset-block-end": "0px",
-  "inset-block-start": "0px",
-  "inset-inline-end": "0px",
-  "inset-inline-start": "0px",
-  "left": "0px",
-  "min-block-size": "auto",
-  "min-height": "auto",
-  "min-inline-size": "auto",
-  "min-width": "auto",
-  "outline-color": "rgb(255, 255, 255)",
-  "perspective-origin": "75px 112.5px",
-  "position": "relative",
-  "right": "0px",
-  "text-decoration-color": "rgb(255, 255, 255)",
-  "text-emphasis-color": "rgb(255, 255, 255)",
-  "top": "0px",
-  "transform": "none",
-  "transform-origin": "75px 112.5px",
-  "transform-style": "preserve-3d",
-  "width": "150px",
-  "-webkit-text-fill-color": "rgb(255, 255, 255)",
-  "-webkit-text-stroke-color": "rgb(255, 255, 255)",
-  "--card-width": "150px",
-  "--card-height": "225px",
-  "--red-suit-color": "#ff4136",
-  "--black-suit-color": "#222",
-  "--diamond-color": "#00c9ff",
-  "--heart-color": "#ff0055",
-  "--spade-color": "#333",
-  "--club-color": "#00a500",
-  "align-content": "normal",
-  "align-items": "normal",
-  "align-self": "auto",
-  "animation-delay": "0s",
-  "animation-direction": "normal",
-  "animation-duration": "0s",
-  "animation-fill-mode": "none",
-  "animation-iteration-count": "1",
-  "animation-name": "none",
-  "animation-play-state": "running",
-  "animation-timing-function": "ease",
-  "aspect-ratio": "auto",
-  "backdrop-filter": "none",
-  "background": "rgba(0, 0, 0, 0) linear-gradient(rgb(255, 0, 85), rgb(255, 138, 128)) repeat scroll 0% 0% / auto padding-box border-box",
-  "background-attachment": "scroll",
-  "background-clip": "border-box",
-  "background-color": "rgba(0, 0, 0, 0)",
-  "background-origin": "padding-box",
-  "background-position-x": "0%",
-  "background-position-y": "0%",
-  "background-repeat": "repeat",
-  "background-size": "auto",
-  "border": "0px none rgb(255, 255, 255)",
-  "border-block": "0px none rgb(255, 255, 255)",
-  "border-block-color": "rgb(255, 255, 255)",
-  "border-block-end": "0px none rgb(255, 255, 255)",
-  "border-block-start": "0px none rgb(255, 255, 255)",
-  "border-bottom": "0px none rgb(255, 255, 255)",
-  "border-color": "rgb(255, 255, 255)",
-  "border-image-outset": "0",
-  "border-image-repeat": "stretch",
-  "border-image-slice": "100%",
-  "border-image-source": "none",
-  "border-image-width": "1",
-  "border-inline": "0px none rgb(255, 255, 255)",
-  "border-inline-color": "rgb(255, 255, 255)",
-  "border-inline-end": "0px none rgb(255, 255, 255)",
-  "border-inline-start": "0px none rgb(255, 255, 255)",
-  "border-left": "0px none rgb(255, 255, 255)",
-  "border-radius": "15px",
-  "border-right": "0px none rgb(255, 255, 255)",
-  "border-style": "none",
-  "border-top": "0px none rgb(255, 255, 255)",
-  "border-width": "0px",
-  "box-sizing": "border-box",
-  "caption-side": "top",
-  "clear": "none",
-  "clip-path": "none",
-  "column-count": "auto",
-  "column-fill": "balance",
-  "column-gap": "normal",
-  "column-rule": "0px rgb(255, 255, 255)",
-  "column-rule-style": "none",
-  "column-rule-width": "0px",
-  "column-span": "none",
-  "column-width": "auto",
-  "columns": "auto auto",
-  "content": "normal",
-  "counter-increment": "none",
-  "counter-reset": "none",
-  "counter-set": "none",
-  "cursor": "auto",
-  "direction": "ltr",
-  "display": "block",
-  "empty-cells": "show",
-  "filter": "none",
-  "flex": "0 0 auto",
-  "flex-basis": "auto",
-  "flex-direction": "row",
-  "flex-flow": "row nowrap",
-  "flex-grow": "0",
-  "flex-shrink": "0",
-  "flex-wrap": "nowrap",
-  "float": "none",
-  "font": "16px Roboto, sans-serif",
-  "font-feature-settings": "normal",
-  "font-kerning": "auto",
-  "font-optical-sizing": "auto",
-  "font-size": "16px",
-  "font-stretch": "100%",
-  "font-style": "normal",
-  "font-variant": "normal",
-  "font-variant-alternates": "normal",
-  "font-variant-caps": "normal",
-  "font-variant-east-asian": "normal",
-  "font-variant-ligatures": "normal",
-  "font-variant-numeric": "normal",
-  "font-variant-position": "normal",
-  "font-variation-settings": "normal",
-  "font-weight": "400",
-  "gap": "normal",
-  "grid": "none",
-  "grid-area": "auto",
-  "grid-auto-columns": "auto",
-  "grid-auto-flow": "row",
-  "grid-auto-rows": "auto",
-  "grid-column": "auto / auto",
-  "grid-column-end": "auto",
-  "grid-column-gap": "0px",
-  "grid-column-start": "auto",
-  "grid-gap": "0px",
-  "grid-row": "auto / auto",
-  "grid-row-end": "auto",
-  "grid-row-gap": "0px",
-  "grid-row-start": "auto",
-  "grid-template": "none",
-  "grid-template-areas": "none",
-  "grid-template-columns": "none",
-  "grid-template-rows": "none",
-  "hanging-punctuation": "none",
-  "hyphens": "manual",
-  "image-orientation": "0deg",
-  "image-rendering": "auto",
-  "image-resolution": "1dppx",
-  "initial-letter": "normal",
-  "inline-size": "150px",
-  "input-security": "auto",
-  "justify-content": "normal",
-  "justify-items": "normal",
-  "justify-self": "auto",
-  "letter-spacing": "normal",
-  "line-break": "auto",
-  "line-height": "normal",
-  "list-style": "disc outside none",
-  "list-style-image": "none",
-  "list-style-position": "outside",
-  "list-style-type": "disc",
-  "margin": "10px",
-  "margin-block": "10px",
-  "margin-block-end": "10px",
-  "margin-block-start": "10px",
-  "margin-bottom": "10px",
-  "margin-inline": "10px",
-  "margin-inline-end": "10px",
-  "margin-inline-start": "10px",
-  "margin-left": "10px",
-  "margin-right": "10px",
-  "margin-top": "10px",
-  "mask": "none",
-  "mask-border": "none",
-  "mask-border-mode": "luminance",
-  "mask-border-outset": "0",
-  "mask-border-repeat": "stretch",
-  "mask-border-slice": "100%",
-  "mask-border-source": "none",
-  "mask-border-width": "auto",
-  "mask-clip": "border-box",
-  "mask-composite": "add",
-  "mask-image": "none",
-  "mask-mode": "match-source",
-  "mask-origin": "border-box",
-  "mask-position": "0% 0%",
-  "mask-repeat": "repeat",
-  "mask-size": "auto",
-  "mask-type": "luminance",
-  "max-block-size": "none",
-  "max-height": "none",
-  "max-inline-size": "none",
-  "max-width": "none",
-  "min-block-size": "auto",
-  "min-height": "auto",
-  "min-inline-size": "auto",
-  "min-width": "auto",
-  "mix-blend-mode": "normal",
-  "object-fit": "fill",
-  "object-position": "50% 50%",
-  "offset": "auto 0px",
-  "offset-anchor": "auto",
-  "offset-distance": "0px",
-  "offset-path": "none",
-  "offset-rotate": "auto 0deg",
-  "opacity": "1",
-  "order": "0",
-  "orphans": "3",
-  "outline": "rgb(255, 255, 255) none 0px",
-  "outline-offset": "0px",
-  "outline-style": "none",
-  "outline-width": "0px",
-  "overflow": "visible",
-  "overflow-anchor": "auto",
-  "overflow-block": "visible",
-  "overflow-clip-margin": "0px",
-  "overflow-inline": "visible",
-  "overflow-wrap": "normal",
-  "overflow-x": "visible",
-  "overflow-y": "visible",
-  "padding": "10px",
-  "padding-block": "10px",
-  "padding-block-end": "10px",
-  "padding-block-start": "10px",
-  "padding-bottom": "10px",
-  "padding-inline": "10px",
-  "padding-inline-end": "10px",
-  "padding-inline-start": "10px",
-  "padding-left": "10px",
-  "padding-right": "10px",
-  "padding-top": "10px",
-  "page-break-after": "auto",
-  "page-break-before": "auto",
-  "page-break-inside": "auto",
-  "paint-order": "normal",
-  "perspective": "none",
-  "place-content": "normal",
-  "place-items": "normal",
-  "place-self": "normal",
-  "pointer-events": "auto",
-  "print-color-adjust": "economy",
-  "quotes": "\"\" \"\"",
-  "resize": "none",
-  "scroll-behavior": "auto",
-  "scroll-margin": "0px",
-  "scroll-margin-block": "0px",
-  "scroll-margin-block-end": "0px",
-  "scroll-margin-block-start": "0px",
-  "scroll-margin-bottom": "0px",
-  "scroll-margin-inline": "0px",
-  "scroll-margin-inline-end": "0px",
-  "scroll-margin-inline-start": "0px",
-  "scroll-margin-left": "0px",
-  "scroll-margin-right": "0px",
-  "scroll-margin-top": "0px",
-  "scroll-padding": "auto",
-  "scroll-padding-block": "auto",
-  "scroll-padding-block-end": "auto",
-  "scroll-padding-block-start": "auto",
-  "scroll-padding-bottom": "auto",
-  "scroll-padding-inline": "auto",
-  "scroll-padding-inline-end": "auto",
-  "scroll-padding-inline-start": "auto",
-  "scroll-padding-left": "auto",
-  "scroll-padding-right": "auto",
-  "scroll-padding-top": "auto",
-  "scroll-snap-align": "none",
-  "scroll-snap-stop": "normal",
-  "scroll-snap-type": "none",
-  "scrollbar-color": "auto",
-  "scrollbar-gutter": "auto",
-  "scrollbar-width": "auto",
-  "shape-image-threshold": "0.01",
-  "shape-margin": "0px",
-  "shape-outside": "none",
-  "tab-size": "8",
-  "table-layout": "auto",
-  "text-align": "start",
-  "text-align-last": "auto",
-  "text-combine-upright": "none",
-  "text-decoration": "none solid rgb(255, 255, 255)",
-  "text-decoration-line": "none",
-  "text-decoration-thickness": "auto",
-  "text-emphasis": "none rgb(255, 255, 255)",
-  "text-indent": "0px",
-  "text-justify": "auto",
-  "text-orientation": "mixed",
-  "text-overflow": "clip",
-  "text-rendering": "auto",
-  "text-shadow": "none",
-  "text-transform": "none",
-  "text-underline-offset": "auto",
-  "text-underline-position": "auto",
-  "touch-action": "auto",
-  "transform": "none",
-  "transform-box": "view-box",
-  "transform-origin": "75px 112.5px",
-  "transform-style": "flat",
-  "transition-delay": "0s",
-  "transition-duration": "0s",
-  "transition-property": "all",
-  "transition-timing-function": "ease",
-  "unicode-bidi": "normal",
-  "user-select": "auto",
-  "vertical-align": "baseline",
-  "view-transition-name": "none",
-  "visibility": "visible",
-  "white-space": "normal",
-  "widows": "3",
-  "width": "150px",
-  "word-break": "normal",
-  "word-spacing": "0px",
-  "word-wrap": "normal",
-  "writing-mode": "horizontal-tb",
-  "z-index": "auto",
-  "zoom": "1"
-}`);
+test.describe('Real-World Component Fixtures - Fancy 3D Cards', () => {
+  test.beforeEach(async ({page}) => {
+    await page.goto(`file://${fixturesHtmlPath}`);
+    await page.evaluate((code) => {
+      const script = document.createElement('script');
+      script.textContent = code;
+      document.head.appendChild(script);
+    }, bundleCode);
   });
+
+  for (const suit of CARD_SUITS) {
+    test(`extracts and renders card[data-suit="${suit}"] with style fidelity in iframe sandbox`, async ({page}) => {
+      const comparison = await page.evaluate((targetSuit) => {
+        const card = document.querySelector(`.card[data-suit="${targetSuit}"]`);
+        if (!card) throw new Error(`Card with suit ${targetSuit} not found`);
+
+        // 1. Measure in-situ styles of the original card
+        const origStyle = window.getComputedStyle(card);
+        const origCardValues = {
+          position: origStyle.position,
+          borderRadius: origStyle.borderRadius,
+          flexShrink: origStyle.flexShrink,
+          transformStyle: origStyle.transformStyle,
+        };
+
+        // Measure child element styles (.card__name)
+        const nameEl = card.querySelector('.card__name');
+        let origNameValues: {fontSize: string; textTransform: string} | null = null;
+        if (nameEl) {
+          const nameStyle = window.getComputedStyle(nameEl);
+          origNameValues = {
+            fontSize: nameStyle.fontSize,
+            textTransform: nameStyle.textTransform,
+          };
+        }
+
+        // 2. Extract snippet
+        const snippet = (window as any).SnappySnippet.extractSnippet(card);
+
+        // 3. Mount in fresh iframe sandbox
+        const iframe = document.createElement('iframe');
+        document.body.appendChild(iframe);
+        const iframeDoc = iframe.contentWindow?.document;
+        if (!iframeDoc) throw new Error('Cannot access iframe document');
+
+        iframeDoc.open();
+        iframeDoc.write(`<!DOCTYPE html><html><head><style>${snippet.css}</style></head><body>${snippet.html}</body></html>`);
+        iframeDoc.close();
+
+        const mountedCard = iframeDoc.body.firstElementChild as HTMLElement;
+        const mountedStyle = iframe.contentWindow!.getComputedStyle(mountedCard);
+        const mountedCardValues = {
+          position: mountedStyle.position,
+          borderRadius: mountedStyle.borderRadius,
+          flexShrink: mountedStyle.flexShrink,
+          transformStyle: mountedStyle.transformStyle,
+        };
+
+        let mountedNameValues: {fontSize: string; textTransform: string} | null = null;
+        for (const el of iframeDoc.body.querySelectorAll('*')) {
+          if (nameEl && el.textContent === nameEl.textContent) {
+            const elStyle = iframe.contentWindow!.getComputedStyle(el);
+            mountedNameValues = {
+              fontSize: elStyle.fontSize,
+              textTransform: elStyle.textTransform,
+            };
+            break;
+          }
+        }
+
+        iframe.remove();
+
+        return {
+          html: snippet.html,
+          css: snippet.css,
+          origCardValues,
+          mountedCardValues,
+          origNameValues,
+          mountedNameValues,
+        };
+      }, suit);
+
+      // Assert non-empty and well-formed outputs
+      expect(comparison.html).toBeDefined();
+      expect(comparison.html.length).toBeGreaterThan(0);
+      expect(comparison.css).toBeDefined();
+      expect(comparison.css.length).toBeGreaterThan(0);
+      expect(comparison.html).toMatch(/<div [^>]*id="DIV_\d+"[^>]*>/);
+
+      // Assert core computed style fidelity on card root
+      expect(comparison.mountedCardValues.position).toBe(comparison.origCardValues.position);
+      expect(comparison.mountedCardValues.borderRadius).toBe(comparison.origCardValues.borderRadius);
+      expect(comparison.mountedCardValues.flexShrink).toBe(comparison.origCardValues.flexShrink);
+      expect(comparison.mountedCardValues.transformStyle).toBe(comparison.origCardValues.transformStyle);
+
+      // Assert child element fidelity
+      if (comparison.origNameValues && comparison.mountedNameValues) {
+        expect(comparison.mountedNameValues.fontSize).toBe(comparison.origNameValues.fontSize);
+        expect(comparison.mountedNameValues.textTransform).toBe(comparison.origNameValues.textTransform);
+      }
+    });
+  }
 });
