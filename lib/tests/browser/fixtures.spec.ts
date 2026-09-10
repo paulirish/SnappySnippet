@@ -4,7 +4,7 @@ import fs from 'node:fs';
 
 const bundlePath = path.resolve('dist/snappysnippet.js');
 const bundleCode = fs.readFileSync(bundlePath, 'utf8');
-const fixturesHtmlPath = path.resolve('lib/fancycards.html');
+const fixturesHtmlPath = path.resolve('lib/tests/fixtures/fancycards.html');
 
 const CARD_SUITS = ['spades', 'hearts', 'diamonds', 'clubs', 'joker'] as const;
 

@@ -105,37 +105,28 @@
 	// Settings - saving & restoring
 
 	function restoreSettings() {
-		chrome.runtime.sendMessage({
-			name: 'getSettings'
-		}, function (settings) {
+		if (!chrome?.storage?.local) return;
+		chrome.storage.local.get(null, function (settings) {
+			if (!settings) return;
 			for (var prop in settings) {
 				var el = $("#" + prop);
-
-				if (!el.length) {
-					delete settings[prop];
-					continue;
-				}
-
+				if (!el.length) continue;
 				if (el.is('[type=checkbox]')) {
-					el.data('checkbox').setCheck(settings[prop] === "true" ? 'check' : 'uncheck');
+					el.data('checkbox').setCheck(settings[prop] === "true" || settings[prop] === true ? 'check' : 'uncheck');
 				} else {
 					el.val(settings[prop]);
 				}
 			}
-
-			chrome.runtime.sendMessage({
-				name: 'setSettings',
-				data: settings
-			});
 		});
 	}
 
 	function persistSettingAndProcessSnapshot() {
-		chrome.runtime.sendMessage({
-			name: 'changeSetting',
-			item: this.id,
-			value: (this.type === 'checkbox') ? this.checked : this.value
-		});
+		if (chrome?.storage?.local) {
+			var val = (this.type === 'checkbox') ? this.checked : this.value;
+			var update = {};
+			update[this.id] = val;
+			chrome.storage.local.set(update);
+		}
 		processSnapshot();
 	}
 

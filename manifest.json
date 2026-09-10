@@ -9,17 +9,9 @@
     "128": "gfx/icon_128.png"
   },
   "devtools_page": "devtools.html",
-  "background": {
-    "service_worker": "js/background.js"
-  },
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self';"
   },
-  "host_permissions": [
-    "https://codepen.io/*",
-    "https://jsfiddle.net/*",
-    "https://jsbin.com/*"
-  ],
   "permissions": [
     "storage"
   ]
