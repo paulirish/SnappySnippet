@@ -1,89 +1,34 @@
 (function () {
 	"use strict";
 
-	// https://source.chromium.org/chromium/chromium/src/+/main:third_party/blink/web_tests/external/wpt/css/cssom/cssom-getPropertyValue-common-checks.html;drc=49996c02d4a54ec79343ddbcbfd563306c34483c
-	const element = document.createElement('div');
-	const { style } = element;
-	const computedStyle = getComputedStyle(element);
-	const cssProperties = new Set();
-	const cssShorthands = new Map();
-	const cssShorthandsForLonghand = new Map();
-	const cssLonghands = new Set();
-	const cssAliases = new Map();
-	const initialValues = new Map();
-	for (let obj = style; obj; obj = Reflect.getPrototypeOf(obj)) {
-    for (let name of Object.getOwnPropertyNames(obj)) {
-      const property = name.replace(/[A-Z]/g, c => "-" + c.toLowerCase());
-      if (CSS.supports(property, "initial")) {
-        cssProperties.add(property);
-      }
-    }
-  }
-  for (let property of cssProperties) {
-    style.cssText = "";
-    style.setProperty(property, "initial");
-    if (style.length > 1) {
-      cssShorthands.set(property, [...style]);
-      for (let longhand of style) {
-        if (cssShorthandsForLonghand.has(longhand)) {
-          cssShorthandsForLonghand.get(longhand).add(property);
-        } else {
-          cssShorthandsForLonghand.set(longhand, new Set([property]));
-        }
-      }
-    } else if (style.length === 1) {
-      if (property === style[0]) {
-        cssLonghands.add(property);
-      } else {
-        cssAliases.set(property, style[0]);
-      }
-    }
-  }
-	const data = {
-		computedStyle,
-		cssProperties,
-		cssShorthands,
-		cssShorthandsForLonghand,
-		cssLonghands,
-		cssAliases,
-		initialValues
-	};
-	globalThis.xdata = data;
-	console.log('initial', xdata);
+	var lastSnapshot;
+	var inspectedContext = new InspectedContext();
 
-	var lastSnapshot,
+	var loader = $('#loader');
+	var createButton = $('#create');
 
-		cssStringifier = new CSSStringifier(),
-		shorthandPropertyFilter = new ShorthandPropertyFilter(),
-		webkitPropertiesFilter = new WebkitPropertiesFilter(),
-		defaultValueFilter = new DefaultValueFilter(),
-		sameRulesCombiner = new SameRulesCombiner(),
-		inspectedContext = new InspectedContext(),
+	var codepenForm = $('#codepen-form');
+	var jsfiddleForm = $('#jsfiddle-form');
+	var jsbinForm = $('#jsbin-form');
 
-		loader = $('#loader'),
-		createButton = $('#create'),
+	var propertiesCleanUpInput = $('#properties-clean-up');
+	var removeDefaultValuesInput = $('#remove-default-values');
+	var removeWebkitPropertiesInput = $('#remove-webkit-properties');
+	var combineSameRulesInput = $('#combine-same-rules');
+	var fixHTMLIndentationInput = $('#fix-html-indentation');
+	var includeAncestors = $('#include-ancestors');
+	var embedCSS = $('#embed-css');
+	var idPrefix = $('#id-prefix');
 
-		codepenForm = $('#codepen-form'),
-		jsfiddleForm = $('#jsfiddle-form'),
-		jsbinForm = $('#jsbin-form'),
+	var htmlTextarea = $('#html');
+	var cssTextarea = $('#css');
+	var previewFrame = $('#preview-frame');
 
-		propertiesCleanUpInput = $('#properties-clean-up'),
-		removeDefaultValuesInput = $('#remove-default-values'),
-		removeWebkitPropertiesInput = $('#remove-webkit-properties'),
-		combineSameRulesInput = $('#combine-same-rules'),
-		fixHTMLIndentationInput = $('#fix-html-indentation'),
-		includeAncestors = $('#include-ancestors'),
-		embedCSS = $('#embed-css'),
-		idPrefix = $('#id-prefix'),
-
-		htmlTextarea = $('#html'),
-		cssTextarea = $('#css'),
-
-		errorBox = $('#error-box');
+	var errorBox = $('#error-box');
 
 	restoreSettings();
 
-	//SUBMITTING THE CODE TO CodePen/jsFiddle/jsBin
+	// SUBMITTING THE CODE TO CodePen/jsFiddle/jsBin
 
 	codepenForm.on('submit', function () {
 		var dataInput = codepenForm.find('input[name=data]');
@@ -112,7 +57,7 @@
 		cssInput.val(encodeURIComponent(cssTextarea.val()));
 	});
 
-	//Event listeners
+	// Event listeners
 
 	propertiesCleanUpInput.on('change', persistSettingAndProcessSnapshot);
 	removeDefaultValuesInput.on('change', persistSettingAndProcessSnapshot);
@@ -120,6 +65,7 @@
 	fixHTMLIndentationInput.on('change', persistSettingAndProcessSnapshot);
 	combineSameRulesInput.on('change', persistSettingAndProcessSnapshot);
 	includeAncestors.on('change', persistSettingAndProcessSnapshot);
+	embedCSS.on('change', persistSettingAndProcessSnapshot);
 
 	createButton.on('click', makeSnapshot);
 
@@ -135,14 +81,14 @@
 	});
 
 	function isValidPrefix(prefix) {
-		var validator = /^[a-z][a-z0-9.\-_:]*$/i;
+		var validator = /^[a-z][a-z0-9._:-]*$/i;
 
 		return validator.test(prefix);
 	}
 
 	idPrefix.on('change', function () {
-		var val = $(this).val(),
-			parent = $(this).parent();
+		var val = $(this).val();
+		var parent = $(this).parent();
 
 		parent.removeClass('has-error').removeClass('has-success');
 
@@ -156,11 +102,9 @@
 		}
 	});
 
-	//Settings - saving & restoring
+	// Settings - saving & restoring
 
 	function restoreSettings() {
-		// Since we can't access localStorage from here, we need to ask background page to handle the settings.
-		// Communication with background page is based on sendMessage/onMessage.
 		chrome.runtime.sendMessage({
 			name: 'getSettings'
 		}, function (settings) {
@@ -168,13 +112,11 @@
 				var el = $("#" + prop);
 
 				if (!el.length) {
-					// Make sure we don't leak any settings when changing/removing id's.
 					delete settings[prop];
 					continue;
 				}
 
 				if (el.is('[type=checkbox]')) {
-					//updating flat UI checkbox
 					el.data('checkbox').setCheck(settings[prop] === "true" ? 'check' : 'uncheck');
 				} else {
 					el.val(settings[prop]);
@@ -186,13 +128,9 @@
 				data: settings
 			});
 		});
-
 	}
 
 	function persistSettingAndProcessSnapshot() {
-		/*jshint validthis:true */
-
-		console.assert(this.id);
 		chrome.runtime.sendMessage({
 			name: 'changeSetting',
 			item: this.id,
@@ -201,30 +139,288 @@
 		processSnapshot();
 	}
 
-	//Making & processing snippets
+	// Snapshot probe to be executed inside inspected page context
+	function snapshotProbe(root) {
+		if (!root || root.nodeType !== 1) {
+			return null;
+		}
+
+		var defaultShorthands = [
+			'animation', 'background', 'border', 'border-top', 'border-right', 'border-bottom', 'border-left',
+			'border-width', 'border-color', 'border-style', 'border-radius', 'border-image', 'border-spacing',
+			'flex', 'flex-flow', 'font', 'grid-area', 'grid-column', 'grid-row', 'list-style', 'margin',
+			'marker', 'outline', 'overflow', 'padding', 'text-decoration', 'transition',
+			'-webkit-border-after', '-webkit-border-before', '-webkit-border-end', '-webkit-border-start',
+			'-webkit-columns', '-webkit-column-rule', '-webkit-margin-collapse', '-webkit-mask',
+			'-webkit-mask-position', '-webkit-mask-repeat', '-webkit-text-emphasis', '-webkit-transition',
+			'-webkit-transform-origin'
+		];
+
+		var shorthandsToCamelCase = {};
+		var cssPropToCamelCase = function (cssProperty) {
+			return cssProperty.replace(/^-./, function (m) { return m.slice(1); })
+				.replace(/-([a-z])/g, function (_, char) { return char.toUpperCase(); });
+		};
+		for (var s = 0; s < defaultShorthands.length; s++) {
+			shorthandsToCamelCase[defaultShorthands[s]] = cssPropToCamelCase(defaultShorthands[s]);
+		}
+
+		try {
+			var dummy = root.ownerDocument.createElement('div');
+			var dStyle = dummy.style;
+			var proto = Object.getPrototypeOf(dStyle);
+			if (proto) {
+				var props = Object.getOwnPropertyNames(proto);
+				for (var p = 0; p < props.length; p++) {
+					var name = props[p];
+					if (typeof dStyle[name] === 'string' && name !== 'cssText' && name !== 'length') {
+						var cssProp = name.replace(/[A-Z]/g, function (c) { return '-' + c.toLowerCase(); });
+						if (typeof CSS !== 'undefined' && CSS.supports && CSS.supports(cssProp, 'initial')) {
+							dStyle.cssText = '';
+							dStyle.setProperty(cssProp, 'initial');
+							if (dStyle.length > 1) {
+								shorthandsToCamelCase[cssProp] = name;
+							}
+						}
+					}
+				}
+			}
+		} catch {
+			// Ignore and use default shorthands
+		}
+
+		function fixContentProperty(content) {
+			if (!content) {
+				return '';
+			}
+			var values = content.match(/(?:[^\s']+|'[^']*')+/g);
+			if (!values) {
+				return '';
+			}
+			var output = [];
+			for (var i = 0; i < values.length; i++) {
+				var val = values[i];
+				if (val.match(/^(url\()|(attr\()|normal|none|open-quote|close-quote|no-open-quote|no-close-quote|chapter_counter|'/)) {
+					output.push(val);
+				} else {
+					output.push("'" + val + "'");
+				}
+			}
+			return output.join(' ');
+		}
+
+		function styleDeclarationToSimpleObject(style) {
+			var output = {};
+			for (var i = 0; i < style.length; i++) {
+				var prop = style[i];
+				output[prop] = style.getPropertyValue(prop);
+			}
+			if (style.content) {
+				output.content = fixContentProperty(style.content);
+			}
+			for (var cssName in shorthandsToCamelCase) {
+				if (Object.prototype.hasOwnProperty.call(shorthandsToCamelCase, cssName)) {
+					var camelName = shorthandsToCamelCase[cssName];
+					var val = style[camelName] || style.getPropertyValue(cssName);
+					if (val) {
+						output[cssName] = val;
+					}
+				}
+			}
+			return output;
+		}
+
+		function dumpCSS(node, pseudoElement) {
+			if (!node.ownerDocument || !node.ownerDocument.defaultView) {
+				return {};
+			}
+			var styles = node.ownerDocument.defaultView.getComputedStyle(node, pseudoElement);
+			if (pseudoElement) {
+				var content = styles.getPropertyValue('content');
+				if (!content || content === 'none' || content === 'normal' || content === '""' || content === "''") {
+					return null;
+				}
+			}
+			return styleDeclarationToSimpleObject(styles);
+		}
+
+		var idCounter = 1;
+		function createID(node) {
+			return ':snappysnippet_prefix:' + node.tagName + '_' + (idCounter++);
+		}
+
+		function cssObjectForElement(element, omitPseudoElements) {
+			return {
+				id: createID(element),
+				tagName: element.tagName,
+				node: dumpCSS(element, null),
+				before: omitPseudoElements ? null : dumpCSS(element, ':before'),
+				after: omitPseudoElements ? null : dumpCSS(element, ':after')
+			};
+		}
+
+		function ancestorTagHTML(element, closingTag) {
+			if (closingTag) {
+				return '</' + element.tagName + '>';
+			}
+			var result = '<' + element.tagName;
+			var attributes = element.attributes;
+			var idSeen = false;
+			for (var i = 0; i < attributes.length; ++i) {
+				var attr = attributes[i];
+				var value = attr.value;
+				if (attr.name.toLowerCase() === 'id') {
+					value = createID(element);
+					idSeen = true;
+				}
+				result += ' ' + attr.name + '="' + value + '"';
+			}
+			if (!idSeen) {
+				result += ' id="' + createID(element) + '"';
+			}
+			result += '>';
+			return result;
+		}
+
+		function relativeURLsToAbsoluteURLs(element) {
+			switch (element.nodeName) {
+				case 'A':
+				case 'AREA':
+				case 'LINK':
+				case 'BASE': {
+					var href = element.getAttribute('href');
+					if (href && !href.startsWith('#') && element.href && typeof element.href === 'string') {
+						element.setAttribute('href', element.href);
+					}
+					break;
+				}
+				case 'IMG':
+				case 'IFRAME':
+				case 'INPUT':
+				case 'FRAME':
+				case 'SCRIPT':
+					if (element.hasAttribute('src')) {
+						element.setAttribute('src', element.src);
+					}
+					break;
+				case 'FORM':
+					if (element.hasAttribute('action')) {
+						element.setAttribute('action', element.action);
+					}
+					break;
+			}
+		}
+
+		var css = [];
+		var ancestorCss = [];
+		var descendants = root.getElementsByTagName('*');
+		var reverseAncestors = [];
+		var parent = root.parentElement;
+		while (parent && parent !== root.ownerDocument.body) {
+			reverseAncestors.push(parent);
+			parent = parent.parentElement;
+		}
+
+		css.push(cssObjectForElement(root));
+
+		for (var i = 0, l = descendants.length; i < l; i++) {
+			css.push(cssObjectForElement(descendants[i]));
+		}
+
+		for (var a = reverseAncestors.length - 1; a >= 0; a--) {
+			ancestorCss.push(cssObjectForElement(reverseAncestors[a], true));
+		}
+
+		var clone = root.cloneNode(true);
+		var cloneDescendants = clone.getElementsByTagName('*');
+		idCounter = 1;
+
+		clone.setAttribute('id', createID(clone));
+		relativeURLsToAbsoluteURLs(clone);
+
+		for (var c = 0, cl = cloneDescendants.length; c < cl; c++) {
+			var desc = cloneDescendants[c];
+			desc.setAttribute('id', createID(desc));
+			relativeURLsToAbsoluteURLs(desc);
+		}
+
+		var htmlSegments = [];
+		for (var h1 = reverseAncestors.length - 1; h1 >= 0; h1--) {
+			htmlSegments.push(ancestorTagHTML(reverseAncestors[h1]));
+		}
+		var leadingAncestorHtml = htmlSegments.join('');
+
+		htmlSegments = [];
+		for (var h2 = 0; h2 < reverseAncestors.length; h2++) {
+			htmlSegments.push(ancestorTagHTML(reverseAncestors[h2], true));
+		}
+		var trailingAncestorHtml = htmlSegments.join('');
+
+		return JSON.stringify({
+			html: clone.outerHTML,
+			leadingAncestorHtml: leadingAncestorHtml,
+			trailingAncestorHtml: trailingAncestorHtml,
+			css: css,
+			ancestorCss: ancestorCss
+		});
+	}
+
+	// Making & processing snippets
 
 	function makeSnapshot() {
 		loader.addClass('creating');
 		errorBox.removeClass('active');
 
-		// sets to arrays.
-		const xdataString = JSON.stringify(xdata,(_key, value) => ((value instanceof Set || value instanceof Map) ? Array.from(value) : value));
-
-		inspectedContext.eval(`
-			globalThis.xdata = ${xdataString};
-			(${Snapshooter.toString()})($0)
-		`, function (result) {
-			try {
-				lastSnapshot = JSON.parse(result);
-			} catch (e) {
+		inspectedContext.eval('(' + snapshotProbe.toString() + ')($0)', function (result, isException) {
+			if (isException || !result) {
 				errorBox.find('.error-message').text('DOM snapshot could not be created. Make sure that you have inspected some element.');
 				errorBox.addClass('active');
+				updatePreview('', '');
+				loader.removeClass('creating');
+				return;
+			}
+
+			try {
+				lastSnapshot = JSON.parse(result);
+			} catch {
+				errorBox.find('.error-message').text('DOM snapshot could not be created. Make sure that you have inspected some element.');
+				errorBox.addClass('active');
+				updatePreview('', '');
+				loader.removeClass('creating');
+				return;
 			}
 
 			processSnapshot();
-
 			loader.removeClass('creating');
 		});
+	}
+
+	function updatePreview(html, css) {
+		if (!previewFrame || !previewFrame.length) {
+			previewFrame = $('#preview-frame');
+		}
+
+		if (!previewFrame.length) {
+			return;
+		}
+
+		if (!html && !css) {
+			previewFrame.attr('srcdoc', '<!DOCTYPE html><html><body></body></html>');
+			return;
+		}
+
+		var styleTag = '';
+		if (css && !html.includes('<style')) {
+			styleTag = '<style type="text/css">\n' + css + '\n</style>\n';
+		}
+
+		var doc = '<!DOCTYPE html>\n<html>\n<head>\n<meta charset="utf-8">\n' +
+			styleTag +
+			'</head>\n<body>\n' +
+			(html || '') +
+			'\n</body>\n</html>';
+
+		previewFrame.attr('srcdoc', doc);
 	}
 
 	function processSnapshot() {
@@ -232,69 +428,48 @@
 			return;
 		}
 
-		var styles = lastSnapshot.css,
-			html = lastSnapshot.html,
-			prefix = "";
-
-		if (includeAncestors.is(':checked')) {
-			styles = lastSnapshot.ancestorCss.concat(styles);
-			html = lastSnapshot.leadingAncestorHtml + html + lastSnapshot.trailingAncestorHtml;
-		}
-
 		loader.addClass('processing');
 
-		if (removeDefaultValuesInput.is(':checked')) {
-			styles = defaultValueFilter.process(styles);
+		try {
+			var prefix = isValidPrefix(idPrefix.val()) ? idPrefix.val() : '';
+			var options = {
+				propertiesCleanUp: propertiesCleanUpInput.is(':checked'),
+				removeDefaultValues: removeDefaultValuesInput.is(':checked'),
+				removeWebkitProperties: removeWebkitPropertiesInput.is(':checked'),
+				combineSameRules: combineSameRulesInput.is(':checked'),
+				fixHTMLIndentation: fixHTMLIndentationInput.is(':checked'),
+				includeAncestors: includeAncestors.is(':checked'),
+				embedCSS: embedCSS.is(':checked'),
+				idPrefix: prefix
+			};
+
+			var snappy = window.SnappySnippet || globalThis.SnappySnippet;
+			if (!snappy || typeof snappy.extractSnippet !== 'function') {
+				throw new Error('SnappySnippet core library is not loaded');
+			}
+
+			var snippet = snappy.extractSnippet(lastSnapshot, options);
+			var html = snippet.html || '';
+			var css = snippet.css || '';
+
+			if (options.embedCSS && !html.includes('<style') && css) {
+				html = '<style type="text/css">\n' + css + '</style>\n' + html;
+				css = '';
+			}
+
+			// Fallback replacement if prefix was not replaced by the core library
+			html = html.replace(/:snappysnippet_prefix:/g, prefix);
+			css = css.replace(/:snappysnippet_prefix:/g, prefix);
+
+			htmlTextarea.val(html);
+			cssTextarea.val(css);
+			updatePreview(html, css);
+		} catch (err) {
+			errorBox.find('.error-message').text('Error processing snippet: ' + (err && err.message ? err.message : err));
+			errorBox.addClass('active');
+			updatePreview('', '');
+		} finally {
+			loader.removeClass('processing');
 		}
-
-		if (propertiesCleanUpInput.is(':checked')) {
-			styles = shorthandPropertyFilter.process(styles);
-		}
-		if (removeWebkitPropertiesInput.is(':checked')) {
-			styles = webkitPropertiesFilter.process(styles);
-		}
-		if (combineSameRulesInput.is(':checked')) {
-			styles = sameRulesCombiner.process(styles);
-		}
-
-		if (fixHTMLIndentationInput.is(':checked')) {
-			html = $.htmlClean(html, {
-				removeAttrs: ['class'],
-				allowedAttributes: [
-					['id'],
-					['placeholder', ['input', 'textarea']],
-					['disabled', ['input', 'textarea', 'select', 'option', 'button']],
-					['value', ['input', 'button']],
-					['readonly', ['input', 'textarea', 'option']],
-					['label', ['option']],
-					['selected', ['option']],
-					['checked', ['input']]
-				],
-				format: true,
-				replace: [],
-				replaceStyles: [],
-				allowComments: true
-			});
-		}
-
-		styles = cssStringifier.process(styles);
-
-		if (embedCSS.is(':checked')) {
-			html = '<style type="text/css">\n' + styles + '</style>\n' + html;
-			styles = '';
-		}
-
-		if (isValidPrefix(idPrefix.val())) {
-			prefix = idPrefix.val();
-		}
-
-		//replacing prefix placeholder used in all IDs with actual prefix
-		html = html.replace(/:snappysnippet_prefix:/g, prefix);
-		styles = styles.replace(/:snappysnippet_prefix:/g, prefix);
-
-		htmlTextarea.val(html);
-		cssTextarea.val(styles);
-
-		loader.removeClass('processing');
 	}
 })();
