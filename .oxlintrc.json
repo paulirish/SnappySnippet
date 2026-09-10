@@ -1,0 +1,40 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "env": {
+    "node": true,
+    "browser": true,
+    "builtin": true
+  },
+  "ignorePatterns": [
+    "dist/**",
+    "css/js/**"
+  ],
+  "rules": {
+    "no-unused-vars": [
+      "error",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^.*$"
+      }
+    ],
+    "no-explicit-any": "error",
+    "typescript/no-restricted-types": [
+      "error",
+      {
+        "types": {
+          "unknown": "Restrict weak/imprecise unknown type usages."
+        }
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["*.spec.ts", "*.test.ts", "lib/tests/**"],
+      "rules": {
+        "no-explicit-any": "off",
+        "typescript/no-explicit-any": "off"
+      }
+    }
+  ]
+}

@@ -1,7 +1,6 @@
-import {defineConfig} from '@playwright/test';
+import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
-  testDir: './tests',
-  testMatch: '**/*.spec.ts',
-  globalSetup: './globalSetup.ts',
+  testDir: '.',
+  testMatch: ['lib/tests/browser/**/*.spec.ts'],
 });

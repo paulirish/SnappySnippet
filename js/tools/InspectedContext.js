@@ -65,3 +65,5 @@ function InspectedContext() {
 		});
 	};
 }
+
+window.InspectedContext = InspectedContext;

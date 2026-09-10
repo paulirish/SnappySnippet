@@ -1,3 +1,7 @@
 validation-status.json
 node_modules/
 .idea/
+dist/
+test-results/
+playwright-report/
+.DS_Store

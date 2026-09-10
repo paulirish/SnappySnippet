@@ -1,24 +1,38 @@
 {
-  "name": "SnappySnippet",
-  "version": "0.5.0",
+  "name": "snappysnippet",
+  "version": "0.6.0",
   "description": "Easily extract CSS and HTML from selected element. Then send it to CodePen, jsFiddle or JS Bin with one click.",
-  "main": "Gruntfile.js",
+  "type": "module",
+  "engines": {
+    "node": ">=24.11.0"
+  },
+  "main": "dist/snappysnippet.js",
+  "module": "dist/snappysnippet.esm.js",
   "repository": {
     "type": "git",
     "url": "git://github.com/kdzwinel/SnappySnippet.git"
   },
   "author": "Konrad Dzwinel",
-  "license": "GPL",
+  "license": "GPL-3.0",
   "bugs": {
     "url": "https://github.com/kdzwinel/SnappySnippet/issues"
   },
   "homepage": "https://github.com/kdzwinel/SnappySnippet",
-  "dependencies": {
-    "grunt": "~0.4.4",
-    "grunt-contrib-jshint": "~0.9.2",
-    "grunt-contrib-watch": "~0.6.1",
-    "grunt-contrib-csslint": "~0.2.0",
-    "grunt-zip": "~0.13.0",
-    "grunt-html": "^5.0.0"
+  "scripts": {
+    "build": "node build.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint",
+    "test": "pnpm run typecheck && pnpm run test:node && pnpm run test:browser",
+    "test:node": "node --test lib/tests/unit/**/*.test.ts",
+    "test:browser": "playwright test",
+    "preflight": "pnpm typecheck && pnpm lint && pnpm test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.1",
+    "@types/node": "^24.10.1",
+    "esbuild": "^0.27.0",
+    "oxlint": "^1.82.0",
+    "playwright": "^1.56.1",
+    "typescript": "^5.9.3"
   }
 }
